@@ -1,0 +1,273 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Haunted candy storefront, checkout application, traffic generator, and deployment artifact bucket.
+Resources:
+  Orders:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: order_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: order_id
+          KeyType: HASH
+  Artifacts:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  CheckoutRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: WriteOrders
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:PutItem
+                Resource:
+                  - !GetAtt Orders.Arn
+                  - !Sub '${Orders.Arn}-missing'
+  Checkout:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt CheckoutRole.Arn
+      Timeout: 10
+      MemorySize: 128
+      LoggingConfig:
+        LogFormat: JSON
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Orders
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import uuid
+          import boto3
+
+          table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+
+          def handler(event, context):
+              body = json.loads(event.get("body") or "{}")
+              quantity = body.get("quantity", 1)
+              if type(quantity) is not int or not 1 <= quantity <= 20:
+                  return {"statusCode": 400, "body": json.dumps({"message": "Choose between 1 and 20 bags."})}
+              order_id = str(uuid.uuid4())
+              print(json.dumps({"event": "checkout.started", "order_id": order_id}))
+              if int(order_id[-1], 16) % 4 == 0:
+                  print(json.dumps({"event": "checkout.promotion", "level": "WARNING", "message": "Expired coupon ignored"}))
+              table.put_item(Item={"order_id": order_id, "item": "midnight-mix", "quantity": quantity})
+              print(json.dumps({"event": "checkout.completed", "order_id": order_id}))
+              return {"statusCode": 200, "body": json.dumps({"order_id": order_id})}
+  CheckoutLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Checkout}
+      RetentionInDays: 7
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${AWS::StackName}-checkout
+      ProtocolType: HTTP
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Checkout.Arn
+      PayloadFormatVersion: '2.0'
+  Route:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: POST /checkout
+      Target: !Sub integrations/${Integration}
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref Api
+      StageName: '$default'
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+  ApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Checkout
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/POST/checkout
+  StorefrontRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ReadStorefront
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub ${Artifacts.Arn}/storefront/index.html
+  Storefront:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt StorefrontRole.Arn
+      Timeout: 10
+      Environment:
+        Variables:
+          ARTIFACT_BUCKET: !Ref Artifacts
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          s3 = boto3.client("s3")
+
+          def handler(event, context):
+              page = s3.get_object(Bucket=os.environ["ARTIFACT_BUCKET"], Key="storefront/index.html")
+              return {
+                  "statusCode": 200,
+                  "headers": {"content-type": "text/html; charset=utf-8", "cache-control": "no-store"},
+                  "body": page["Body"].read().decode("utf-8"),
+              }
+  StorefrontLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Storefront}
+      RetentionInDays: 7
+  StorefrontIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Storefront.Arn
+      PayloadFormatVersion: '2.0'
+  StorefrontRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: GET /
+      Target: !Sub integrations/${StorefrontIntegration}
+  StorefrontPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Storefront
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/GET/
+  TrafficRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: InvokeCheckout
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt Checkout.Arn
+  Traffic:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt TrafficRole.Arn
+      Timeout: 50
+      Environment:
+        Variables:
+          APP_FUNCTION: !Ref Checkout
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          client = boto3.client("lambda")
+
+          def handler(event, context):
+              for _ in range(20):
+                  response = client.invoke(FunctionName=os.environ["APP_FUNCTION"], Payload=b"{}")
+                  response["Payload"].read()
+                  print({"status": response.get("FunctionError", "OK")})
+  TrafficSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 minute)
+      State: DISABLED
+      Targets:
+        - Id: traffic
+          Arn: !GetAtt Traffic.Arn
+  TrafficPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Traffic
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TrafficSchedule.Arn
+Outputs:
+  StorefrontUrl:
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/
+  Endpoint:
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/checkout
+  FunctionName:
+    Value: !Ref Checkout
+    Export:
+      Name: !Sub ${AWS::StackName}-FunctionName
+  FunctionArn:
+    Value: !GetAtt Checkout.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-FunctionArn
+  LogGroup:
+    Value: !Ref CheckoutLogs
+    Export:
+      Name: !Sub ${AWS::StackName}-LogGroup
+  TableName:
+    Value: !Ref Orders
+    Export:
+      Name: !Sub ${AWS::StackName}-TableName
+  ArtifactBucket:
+    Value: !Ref Artifacts
+    Export:
+      Name: !Sub ${AWS::StackName}-ArtifactBucket
+  TrafficRule:
+    Value: !Ref TrafficSchedule

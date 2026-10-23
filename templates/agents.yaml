@@ -1,0 +1,272 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: One Harness investigator with AWS Toolkit, scoped IAM, memory, sessions, and Slack reporting.
+Parameters:
+  ApplicationStack:
+    Type: String
+    Default: haunted-app
+  NamePrefix:
+    Type: String
+    Default: haunted
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]{0,24}'
+  ArtifactKey:
+    Type: String
+  ModelId:
+    Type: String
+  SlackSecretArn:
+    Type: String
+  SlackChannelId:
+    Type: String
+  SlackOncallUserId:
+    Type: String
+Resources:
+  Sessions:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  Memory:
+    Type: AWS::BedrockAgentCore::Memory
+    Properties:
+      Name: !Sub ${NamePrefix}_incident_memory
+      EventExpiryDuration: 30
+      MemoryStrategies:
+        - EpisodicMemoryStrategy:
+            Name: incident_episodes
+            Namespaces:
+              - /services/{actorId}/episodes/
+            ReflectionConfiguration:
+              Namespaces:
+                - /services/{actorId}/reflections/
+  AgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvestigateCheckout
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:StartQuery
+                  - logs:FilterLogEvents
+                  - logs:GetLogEvents
+                  - logs:DescribeLogStreams
+                Resource:
+                  Fn::Sub:
+                    - arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${Group}:*
+                    - Group:
+                        Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
+              - Effect: Allow
+                Action:
+                  - logs:GetQueryResults
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:GetMetricStatistics
+                Resource: '*'
+              - Effect: Allow
+                Action: lambda:GetFunctionConfiguration
+                Resource:
+                  Fn::ImportValue: !Sub ${ApplicationStack}-FunctionArn
+              - Effect: Allow
+                Action: dynamodb:DescribeTable
+                Resource:
+                  Fn::Sub:
+                    - arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}
+                    - Table:
+                        Fn::ImportValue: !Sub ${ApplicationStack}-TableName
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:ListStackResources
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationStack}/*
+        - PolicyName: OperateAgent
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource:
+                  - !Sub arn:${AWS::Partition}:bedrock:*::foundation-model/*
+                  - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/*
+                  - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:application-inference-profile/*
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/runtimes/*:*
+              - Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetMemory
+                  - bedrock-agentcore:RetrieveMemoryRecords
+                  - bedrock-agentcore:ListMemoryRecords
+                  - bedrock-agentcore:CreateEvent
+                Resource: !GetAtt Memory.MemoryArn
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt Sessions.Arn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub ${Sessions.Arn}/sessions/*
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  Fn::Sub:
+                    - arn:${AWS::Partition}:s3:::${Bucket}/${ArtifactKey}
+                    - Bucket:
+                        Fn::ImportValue: !Sub ${ApplicationStack}-ArtifactBucket
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref SlackSecretArn
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:StartCodeInterpreterSession
+                  - bedrock-agentcore:InvokeCodeInterpreter
+                  - bedrock-agentcore:StopCodeInterpreterSession
+                  - bedrock-agentcore:GetCodeInterpreterSession
+                Resource: !Sub arn:${AWS::Partition}:bedrock-agentcore:${AWS::Region}:aws:code-interpreter/aws.codeinterpreter.v1
+  Investigator:
+    Type: AWS::BedrockAgentCore::Runtime
+    Properties:
+      AgentRuntimeName: !Sub ${NamePrefix}_investigator
+      RoleArn: !GetAtt AgentRole.Arn
+      ProtocolConfiguration: HTTP
+      NetworkConfiguration:
+        NetworkMode: PUBLIC
+      LifecycleConfiguration:
+        IdleRuntimeSessionTimeout: 300
+        MaxLifetime: 1800
+      AgentRuntimeArtifact:
+        CodeConfiguration:
+          Runtime: PYTHON_3_12
+          EntryPoint: [agent.py]
+          Code:
+            S3:
+              Bucket:
+                Fn::ImportValue: !Sub ${ApplicationStack}-ArtifactBucket
+              Prefix: !Ref ArtifactKey
+      EnvironmentVariables:
+        AWS_REGION: !Ref AWS::Region
+        AWS_DEFAULT_REGION: !Ref AWS::Region
+        MODEL_ID: !Ref ModelId
+        MEMORY_ID: !GetAtt Memory.MemoryId
+        SERVICE_ID: !Sub ${NamePrefix}_checkout
+        SESSION_BUCKET: !Ref Sessions
+        APP_STACK: !Ref ApplicationStack
+        APP_FUNCTION:
+          Fn::ImportValue: !Sub ${ApplicationStack}-FunctionName
+        APP_TABLE:
+          Fn::ImportValue: !Sub ${ApplicationStack}-TableName
+        APP_LOG_GROUP:
+          Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
+        SLACK_SECRET_ARN: !Ref SlackSecretArn
+        SLACK_CHANNEL_ID: !Ref SlackChannelId
+        SLACK_ONCALL_USER_ID: !Ref SlackOncallUserId
+  IntakeFailures:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+  IntakeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: StartInvestigation
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: bedrock-agentcore:InvokeAgentRuntime
+                Resource:
+                  - !GetAtt Investigator.AgentRuntimeArn
+                  - !Sub ${Investigator.AgentRuntimeArn}/runtime-endpoint/*
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt IntakeFailures.Arn
+  Intake:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt IntakeRole.Arn
+      Timeout: 120
+      Environment:
+        Variables:
+          AGENT_ARN: !GetAtt Investigator.AgentRuntimeArn
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          from botocore.config import Config
+
+          runtime = boto3.client("bedrock-agentcore", config=Config(read_timeout=110))
+
+          def handler(event, context):
+              response = runtime.invoke_agent_runtime(
+                  agentRuntimeArn=os.environ["AGENT_ARN"],
+                  runtimeSessionId=f"incident-{event['id']}",
+                  payload=json.dumps({
+                      "incident_id": event["id"],
+                      "prompt": f"Investigate this CloudWatch alarm and report your findings: {json.dumps(event)}",
+                      "background": True,
+                  }).encode(),
+              )
+              return json.loads(response["response"].read())
+  IntakeRetries:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref Intake
+      Qualifier: '$LATEST'
+      MaximumRetryAttempts: 2
+      MaximumEventAgeInSeconds: 900
+      DestinationConfig:
+        OnFailure:
+          Destination: !GetAtt IntakeFailures.Arn
+Outputs:
+  RuntimeArn:
+    Value: !GetAtt Investigator.AgentRuntimeArn
+  AgentRoleArn:
+    Value: !GetAtt AgentRole.Arn
+  IntakeArn:
+    Value: !GetAtt Intake.Arn
+  MemoryId:
+    Value: !GetAtt Memory.MemoryId
+  ServiceId:
+    Value: !Sub ${NamePrefix}_checkout
+  SessionBucket:
+    Value: !Ref Sessions
+  FailureQueueUrl:
+    Value: !Ref IntakeFailures

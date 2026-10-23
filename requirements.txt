@@ -1,0 +1,8 @@
+strands-harness==0.2.0
+strands-agents==1.60.0
+strands-agents-tools==0.8.9
+bedrock-agentcore==1.24.1
+boto3==1.43.113
+slack-sdk==3.45.0
+awscli==1.46.1
+mcp-proxy-for-aws==1.7.0

@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Checkout error-rate alarm and optional routing to the incident intake.
+Parameters:
+  ApplicationStack:
+    Type: String
+    Default: haunted-app
+  IntakeArn:
+    Type: String
+    Default: ''
+Conditions:
+  Connected: !Not [!Equals [!Ref IntakeArn, '']]
+Resources:
+  Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Checkout Lambda error rate exceeded 20 percent for two minutes.
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 20
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errors
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value:
+                    Fn::ImportValue: !Sub ${ApplicationStack}-FunctionName
+            Period: 60
+            Stat: Sum
+        - Id: requests
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value:
+                    Fn::ImportValue: !Sub ${ApplicationStack}-FunctionName
+            Period: 60
+            Stat: Sum
+        - Id: rate
+          Expression: IF(requests >= 5, 100 * errors / requests, 0)
+          Label: Checkout error percentage
+          ReturnData: true
+  AlarmRoute:
+    Type: AWS::Events::Rule
+    Condition: Connected
+    Properties:
+      EventPattern:
+        source: [aws.cloudwatch]
+        detail-type: [CloudWatch Alarm State Change]
+        resources:
+          - !GetAtt Alarm.Arn
+        detail:
+          state:
+            value: [ALARM]
+      Targets:
+        - Id: investigator
+          Arn: !Ref IntakeArn
+          RetryPolicy:
+            MaximumEventAgeInSeconds: 900
+            MaximumRetryAttempts: 2
+  IntakePermission:
+    Type: AWS::Lambda::Permission
+    Condition: Connected
+    Properties:
+      FunctionName: !Ref IntakeArn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AlarmRoute.Arn
+Outputs:
+  AlarmName:
+    Value: !Ref Alarm
+  AlarmArn:
+    Value: !GetAtt Alarm.Arn

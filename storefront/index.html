@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f2e8">
+  <title>Midnight Candy Co. — A hauntingly good mix</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍬%3C/text%3E%3C/svg%3E">
+  <style>
+    :root { color-scheme: light; --paper:#f7f2e8; --ink:#29251f; --orange:#e85525; --line:#d9d1c2; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 system-ui,sans-serif; }
+    button { font:inherit; cursor:pointer; }
+    button:focus-visible, a:focus-visible { outline:3px solid #6d50ae; outline-offset:5px; }
+    .ribbon { background:var(--ink); color:var(--paper); text-align:center; padding:8px 16px; font-size:11px; letter-spacing:2px; text-transform:uppercase; }
+    header, main, footer { max-width:1240px; margin:auto; padding-left:36px; padding-right:36px; }
+    header { display:flex; align-items:center; justify-content:space-between; padding-top:24px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:850; letter-spacing:-1px; font-size:23px; line-height:1.05; }
+    .brand svg { width:39px; height:45px; }
+    .brand small { display:block; font-size:10px; letter-spacing:3px; margin-top:7px; font-weight:600; }
+    .edition { font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+    .intro { display:flex; justify-content:space-between; align-items:end; gap:30px; padding:38px 0 30px; }
+    .eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+    h1 { font:normal clamp(36px,4.4vw,60px)/1.04 Georgia,serif; letter-spacing:-2px; margin:12px 0 0; }
+    h1 em { color:var(--orange); }
+    .intro p { max-width:260px; font-size:14px; margin:0 0 4px; color:#625c52; }
+    .shop { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(310px,1fr); gap:32px; align-items:start; }
+    .art { border-radius:8px; background:#dbd5ee; overflow:hidden; position:relative; }
+    .art svg { display:block; width:100%; height:auto; max-height:358px; }
+    .stamp { position:absolute; top:19px; left:20px; border:1px solid #575064; border-radius:30px; padding:5px 12px; font-size:10px; letter-spacing:1px; text-transform:uppercase; }
+    .caption { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:12px; }
+    .caption span:last-child { color:#696255; }
+    .mix { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:21px 0; }
+    .mix strong { display:block; font-size:13px; margin-bottom:4px; }
+    .mix span { display:block; font-size:12px; color:#696255; }
+    .order { padding:26px; background:#fffdf7; border:1px solid var(--line); border-radius:8px; }
+    .tag { color:#795226; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; }
+    h2 { font:normal 34px/1.1 Georgia,serif; margin:12px 0; letter-spacing:-1px; }
+    .description { font-size:14px; color:#696255; margin-bottom:24px; }
+    .quantity-row { border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:18px 0; display:flex; justify-content:space-between; align-items:center; }
+    .quantity-row label { font-size:13px; font-weight:650; }
+    .stepper { display:flex; align-items:center; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
+    .stepper button { border:0; background:transparent; width:38px; height:38px; font-size:20px; }
+    .stepper button:hover:not(:disabled) { background:#eee8dd; }
+    output { width:32px; text-align:center; font-variant-numeric:tabular-nums; }
+    .total { display:flex; justify-content:space-between; margin:20px 0; font-size:13px; }
+    .total strong { font-size:15px; }
+    #checkout { width:100%; background:var(--orange); color:white; border:0; border-radius:5px; padding:15px 12px; font-weight:750; }
+    #checkout:hover:not(:disabled) { background:#c94418; }
+    button:disabled { cursor:default; opacity:.5; }
+    .note { font-size:11px; text-align:center; color:#736b5f; margin:12px 0 0; }
+    #status:empty { display:none; }
+    #status { margin-top:18px; padding:15px; border:1px solid; border-radius:5px; font-size:13px; overflow-wrap:anywhere; }
+    #status strong { display:block; font-size:15px; margin-bottom:5px; }
+    #status p { margin:4px 0 0; }
+    #status[data-state="error"] { color:#832e25; background:#fff0eb; border-color:#e3ada2; }
+    #status[data-state="success"] { color:#24573e; background:#edf5ed; border-color:#a5c5a7; }
+    #status[data-state="pending"] { color:#625175; background:#f1edf8; border-color:#c9bbdf; }
+    .promise { display:flex; justify-content:space-between; gap:20px; margin-top:32px; padding:20px 0; border-top:1px solid var(--line); font-size:12px; }
+    footer { display:flex; justify-content:space-between; gap:20px; padding-top:20px; padding-bottom:24px; color:#786f62; font-size:11px; }
+    @media (max-width:760px) {
+      header,main,footer { padding-left:20px; padding-right:20px; }
+      header { padding-top:18px; padding-bottom:18px; }
+      .edition { font-size:9px; max-width:86px; text-align:right; }
+      .intro { display:block; padding-top:28px; }
+      .intro p { max-width:100%; margin-top:18px; }
+      .shop { grid-template-columns:1fr; gap:10px; }
+      .art svg { max-height:300px; }
+      .order { padding:22px; }
+      .promise { flex-wrap:wrap; margin-top:24px; }
+      footer { flex-wrap:wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ribbon">Something sweet this way comes · Halloween collection</div>
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 44 50" aria-hidden="true"><path d="M5 43V21C5 0 39 0 39 21V43L30 37L22 44L14 37Z" fill="#e85525"/><ellipse cx="16" cy="23" rx="2.8" ry="4" fill="#f7f2e8"/><ellipse cx="28" cy="23" rx="2.8" ry="4" fill="#f7f2e8"/></svg>
+      <div>Midnight<small>CANDY CO.</small></div>
+    </div>
+    <div class="edition">Limited Halloween edition · No. 028</div>
+  </header>
+  <main>
+    <section class="intro">
+      <div><div class="eyebrow">For the sweet-toothed &amp; slightly spooky</div><h1>All treats.<br><em>Hopefully</em> no tricks.</h1></div>
+      <p>A bag of after-dark favorites.<br>Pick your quantity. We'll handle the spirits.</p>
+    </section>
+    <div class="shop">
+      <section aria-label="The Midnight Mix candy collection">
+        <div class="art">
+          <span class="stamp">Handpicked by night owls</span>
+          <svg viewBox="0 0 640 350" role="img" aria-label="A Midnight Mix candy bag surrounded by a friendly ghost, wrapped sweets, and a crescent moon">
+            <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#6d568b" opacity=".12"/></pattern></defs>
+            <rect width="640" height="350" fill="url(#dots)"/>
+            <ellipse cx="327" cy="308" rx="146" ry="16" fill="#b9adcd"/>
+            <path d="M499 52a38 38 0 1 0 43 51 35 35 0 0 1-43-51" fill="#fff3b4"/>
+            <g fill="#514266"><path d="m142 91 3 10 10 3-10 3-3 10-3-10-10-3 10-3Z"/><path d="m539 250 3 10 10 3-10 3-3 10-3-10-10-3 10-3Z"/><circle cx="473" cy="188" r="3"/><circle cx="192" cy="256" r="3"/></g>
+            <g transform="translate(221 45) rotate(-7 107 130)">
+              <path d="M6 4H200L212 260H0Z" fill="#e85525" stroke="#833b25" stroke-width="2"/>
+              <path d="M6 4H200V29H5Z" fill="#c7431c"/>
+              <path d="M17 13H188" stroke="#ef8b60" stroke-width="2" stroke-dasharray="3 4"/>
+              <rect x="22" y="51" width="169" height="173" rx="80" fill="#fff0d8"/>
+              <text x="106" y="81" text-anchor="middle" fill="#413025" font-family="Georgia,serif" font-size="13">MIDNIGHT CANDY CO.</text>
+              <path d="M81 144V120C81 88 134 88 134 120V144L125 138L116 146L106 138L94 146Z" fill="#775f94"/>
+              <ellipse cx="98" cy="121" rx="3" ry="5" fill="#fff0d8"/><ellipse cx="116" cy="121" rx="3" ry="5" fill="#fff0d8"/>
+              <text x="106" y="174" text-anchor="middle" fill="#413025" font-family="Georgia,serif" font-size="29">Midnight</text>
+              <text x="106" y="199" text-anchor="middle" fill="#413025" font-family="Georgia,serif" font-size="26">Mix</text>
+              <text x="106" y="244" text-anchor="middle" fill="#fff0d8" font-family="system-ui,sans-serif" font-size="10" letter-spacing="2">GOOD TO THE LAST BITE</text>
+            </g>
+            <g transform="translate(95 198) rotate(-24)">
+              <path d="M-34-24-10-12V12L-34 24-28 0Z M34-24 10-12V12L34 24 28 0Z" fill="#7b6097" stroke="#514266" stroke-width="2"/>
+              <rect x="-22" y="-21" width="44" height="42" rx="14" fill="#a992c4" stroke="#514266" stroke-width="2"/><path d="M-8-19V19M8-19V19" stroke="#dcd1ea" stroke-width="6"/>
+            </g>
+            <g transform="translate(499 290) rotate(20)">
+              <path d="M-37-23-13-12V12L-37 23-31 0Z M37-23 13-12V12L37 23 31 0Z" fill="#ddaa43" stroke="#886528" stroke-width="2"/>
+              <rect x="-23" y="-20" width="46" height="40" rx="16" fill="#f6d877" stroke="#886528" stroke-width="2"/><path d="M-8-18V18M8-18V18" stroke="#fff1be" stroke-width="6"/>
+            </g>
+            <g transform="translate(482 139) rotate(13)">
+              <path d="M0 74V25C0-10 55-10 55 25V74L44 65 33 75 21 66 10 75Z" fill="#fff9eb" stroke="#93839d" stroke-width="2"/>
+              <ellipse cx="18" cy="30" rx="3.5" ry="5.5" fill="#514266"/><ellipse cx="37" cy="30" rx="3.5" ry="5.5" fill="#514266"/><path d="M24 44Q28 49 32 44" fill="none" stroke="#514266" stroke-width="2"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><span>The Midnight Mix / Halloween collection</span><span>Three frightful favorites</span></div>
+        <div class="mix">
+          <div><strong>Ghostly gummies</strong><span>A spirited little chew.</span></div>
+          <div><strong>Moonlight caramels</strong><span>Soft. Golden. Gone.</span></div>
+          <div><strong>Witch's chocolate</strong><span>Dark magic, sweet finish.</span></div>
+        </div>
+      </section>
+      <section class="order" aria-labelledby="product-name">
+        <div class="tag">The seasonal favorite</div>
+        <h2 id="product-name">The Midnight Mix</h2>
+        <p class="description">A little chewy, a little chocolatey, entirely bewitching. All three favorites in every bag.</p>
+        <div class="quantity-row">
+          <label for="quantity">Bags of treats</label>
+          <div class="stepper">
+            <button id="minus" type="button" aria-label="Remove one bag" disabled>−</button>
+            <output id="quantity" aria-live="polite">1</output>
+            <button id="plus" type="button" aria-label="Add one bag">+</button>
+          </div>
+        </div>
+        <div class="total"><span>In your bag</span><strong id="summary">1 × Midnight Mix</strong></div>
+        <button id="checkout" type="button">Place demo order →</button>
+        <p class="note">Demo candy store · No payment or address needed</p>
+        <div id="status" role="status" aria-live="polite" aria-atomic="true"></div>
+      </section>
+    </div>
+    <div class="promise"><span>✦ A hauntingly good mix</span><span>✦ Packed with Halloween spirit</span><span>✦ Treat yourself. You've survived enough.</span></div>
+  </main>
+  <footer><span>© Midnight Candy Co. · An incident-triage demo</span><span>Made for the October 28 livestream</span></footer>
+  <script>
+    let quantity = 1;
+    const minus = document.querySelector("#minus");
+    const plus = document.querySelector("#plus");
+    const checkout = document.querySelector("#checkout");
+    const status = document.querySelector("#status");
+
+    function changeQuantity(amount) {
+      quantity = Math.min(20, Math.max(1, quantity + amount));
+      document.querySelector("#quantity").textContent = quantity;
+      document.querySelector("#summary").textContent = `${quantity} × Midnight Mix`;
+      minus.disabled = quantity === 1;
+      plus.disabled = quantity === 20;
+    }
+
+    function showStatus(state, title, detail) {
+      status.dataset.state = state;
+      const heading = document.createElement("strong");
+      heading.textContent = title;
+      const text = document.createElement("p");
+      text.textContent = detail;
+      status.replaceChildren(heading, text);
+    }
+
+    minus.addEventListener("click", () => changeQuantity(-1));
+    plus.addEventListener("click", () => changeQuantity(1));
+    checkout.addEventListener("click", async () => {
+      checkout.disabled = minus.disabled = plus.disabled = true;
+      checkout.textContent = "Placing your order…";
+      showStatus("pending", "Summoning your sweets…", "Hang tight while we place your order.");
+      try {
+        const response = await fetch("/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quantity }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) {
+          showStatus("error", "Something's haunting checkout.", "We couldn't complete your order. Your bag is still here — please try again shortly.");
+          checkout.textContent = "Try checkout again →";
+          return;
+        }
+        const order = await response.json();
+        showStatus("success", "Sweet! Your order is in.", `${quantity} ${quantity === 1 ? "bag" : "bags"} of Midnight Mix. Order ${order.order_id}`);
+        checkout.textContent = "Place another demo order →";
+      } catch {
+        showStatus("error", "We lost touch with the candy store.", "We couldn't confirm your order. Please check your connection before trying again.");
+        checkout.textContent = "Try checkout again →";
+      } finally {
+        checkout.disabled = false;
+        changeQuantity(0);
+      }
+    });
+  </script>
+</body>
+</html>
