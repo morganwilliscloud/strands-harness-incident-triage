@@ -6,6 +6,8 @@ The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
+The [livestream visual kit](visuals/README.md) includes nine full-screen graphics, editable SVGs, presenter notes, and transparent Halloween frog overlays.
+
 ```mermaid
 flowchart TD
     Browser[Midnight Candy Co. storefront] -->|POST /checkout| App[Checkout Lambda → DynamoDB]

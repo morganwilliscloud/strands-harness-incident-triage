@@ -1,5 +1,12 @@
 # Validation
 
+## October 26, 2026 — Livestream visual kit
+
+- Created nine 1920×1080 PNG graphics with editable SVG sources, six transparent seasonal overlays, a contact sheet, and presenter notes. The style guide was read through the signed-in browser; the original public frog and wordmark assets and canonical fonts are included with provenance.
+- Checked the architecture and explanation against the current agent, signing helper, IAM templates, and installed Harness defaults. Graphics distinguish S3 session snapshots from AgentCore lessons, Runtime from Code Interpreter, and Runtime credentials from the assumed investigation identity.
+- Rendered and visually reviewed the set, corrected the frog/text overlap in the loop graphic, and checked all 209 text elements against canvas bounds. Verified every main PNG is 1920×1080 and every overlay has transparency.
+- Added visual cues to the run of show. The visual generator and dependencies are separate from the deployed agent; no AWS deployment or application code changed.
+
 ## October 26, 2026 — Basic TypeScript Harness example
 
 - Added `examples/basic/agent.ts` and `npm run basic`, using the existing pinned dependencies and the incident agent's Bedrock model. All Harness tools, context, session, memory, and printing settings remain at their defaults.

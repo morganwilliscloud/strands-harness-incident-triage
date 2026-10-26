@@ -27,6 +27,20 @@ Each segment lists its estimated duration and the cumulative running time at the
 | Takeaways and sign-off | 2 min | 60 min | Main host, then Rafael |
 | **Total** | **60 min** | | |
 
+### Visual cues
+
+Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](../visuals/README.md) includes a contact sheet, editable sources, transparent overlays, and presenter notes.
+
+| Segment | Graphic |
+|---|---|
+| Welcome | `01-title.png` |
+| Architecture | `02-architecture.png` |
+| Strands and basic Harness | `03-strands-loop.png`, then `04-harness-defaults.png` |
+| Customize the agent | `08-skills-context-memory.png`, `05-runtime-memory.png`, `06-runtime-interpreter.png` |
+| Deploy and explain permissions | `07-mcp-iam.png` |
+| Live investigation | `09-observability.png`, then the actual traces and Slack |
+| Q&A and sign-off | `01-title.png` or the diagram relevant to the question |
+
 ## 1. Welcome and introductions
 
 **Duration:** 4 minutes — puts us **4 minutes into the show**.\
