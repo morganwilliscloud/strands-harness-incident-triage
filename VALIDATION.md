@@ -1,5 +1,19 @@
 # Validation
 
+## October 26, 2026 — Agent and Code Interpreter tracing
+
+- Deployed OpenTelemetry export for native Strands agent/model/tool spans, plus CloudFormation trace delivery for Runtime and Code Interpreter and application-log delivery for Code Interpreter. Existing account-level Transaction Search and 100% trace indexing were left unchanged.
+- Real hosted rehearsal `46db98ee-8d9d-4087-9f14-8c0ed153111c` produced trace `44afb4c603fc61b482396b8a40660f83`. Retrieved 21 spans from CloudWatch, including the agent root, model calls, skill/reference reads, AWS MCP, and all three Code Interpreter tools.
+- AWS MCP executed `GetFunctionConfiguration` and returned the real table name. Its returned execution status and nested API-call status were both successful. Code Interpreter calculated a synthetic 20/20 error rate, wrote the fixture as JSON, and read/calculated it through a shell command. The synthetic result was explicitly distinguished from live application metrics.
+- Verified all three `AgentCore.BuiltinTools.InvokeCodeInterpreter` spans had the same trace ID and their corresponding agent tool spans as parents. Agent tool attributes contained generated code/commands and returned results. Code Interpreter application logs contained invocation request payloads and correlation IDs.
+- Runtime's platform invocation span is a separate trace root, correlated by Runtime session ID. This does not claim full HTTP auto-instrumentation or visibility into the managed AWS MCP service's internal execution.
+- The first instrumented rehearsal exposed a Strands SDK 1.22.0 issue: MCP tracing inserts `_meta` into tool arguments, rejected by AWS MCP. Setting the published `disableMcpInstrumentation` option corrected the request without suppressing the agent's MCP tool spans; the subsequent real call above passed.
+- That first rehearsal also exposed two lazily created interpreter sessions when first tool calls ran concurrently. The unused rehearsal session was stopped. The agent now explicitly starts one session before invocation instead of relying on lazy initialization.
+- Final Runtime version 8 passed a parallel-tool rehearsal for `c330305c-5a95-4883-a7ae-7b907054608c`: Python returned `42`, the shell returned `halloween`, exactly one named interpreter session was created, and it was `TERMINATED` after invocation. The agent exported trace `e34f39f675c85c5de5355ee7f2a734c4`.
+- The full Node ADOT package was evaluated and removed after its transitive dependency audit reported advisories. The deployed narrower OpenTelemetry dependency set passed the production npm audit with zero known vulnerabilities and no overrides. The SigV4 OTLP transport is application code using official serializers and AWS signing components.
+- Type checking, compilation, Linux ARM64 packaging, and CloudFormation linting with Python 3.12 passed. The machine's global Python 3.14 lint launcher failed on a Pydantic compatibility issue; the Python 3.12 tool completed successfully.
+- These tracing rehearsals used `notify=false`. They did not send additional Slack messages or introduce an application fault. The earlier real alarm-to-Slack result below remains the notification verification.
+
 ## October 26, 2026 — TypeScript migration
 
 - Agent implementation moved to one `agent.ts`, using published Harness 0.3.1, Strands SDK 1.22.0, and AgentCore SDK 0.4.6. Code Interpreter uses the SDK's experimental Strands integration. No legacy Strands tools package is installed or deployed.

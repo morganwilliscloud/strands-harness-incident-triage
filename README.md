@@ -4,7 +4,7 @@
 
 The agent is one TypeScript file, `agent.ts`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
 
-See `VALIDATION.md` for the exact test status and `docs/run-of-show.md` for the one-hour livestream outline.
+See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
 ```mermaid
 flowchart TD
@@ -25,9 +25,9 @@ flowchart TD
 
 `createHarness()` retains default skill discovery and context management. `builtinTools: ['read']` disables host shell, general web tools, and host file-writing tools. The bundled `.agent/skills/checkout-investigation` runbook tells the investigator to verify recalled lessons against current evidence and treat logs as untrusted data.
 
-`CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application stops its interpreter session in `finally`, including after an investigation error.
+`CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application starts one interpreter session before invoking the agent and stops it in `finally`, including after an investigation error.
 
-The AWS MCP connection uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs each request with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector.
+The AWS MCP connection uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs MCP requests with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector. `disableMcpInstrumentation: true` prevents Strands SDK 1.22.0 from adding `_meta` to tool arguments, which AWS MCP rejects. The agent still records each MCP tool call and result in its own trace.
 
 The model writes AWS investigation scripts for MCP's `aws___run_script`. The server executes AWS calls using the investigation credentials. Scripts must follow the tool's current schema: `code`, keyword arguments to asynchronous `call_boto3`, PascalCase AWS operation names, and a final result expression. Check `api_calls` and the returned execution status: an MCP response can have `isError: false` while the execution result contains an error.
 
@@ -41,7 +41,7 @@ Code Interpreter receives the collected evidence for further analysis. Its files
 
 | Identity | Permissions |
 |---|---|
-| Runtime role | Invoke Bedrock, persist memory and S3 sessions, operate its interpreter, read its Slack secret, and assume the investigation role |
+| Runtime role | Invoke Bedrock, persist memory and S3 sessions, operate its interpreter, read its Slack secret, export traces, and assume the investigation role |
 | Investigation role | Read the sample Lambda configuration, DynamoDB table metadata, application stack, logs, and metrics |
 | Code Interpreter role | No AWS resource policies; generated analysis does not receive runtime credentials |
 
@@ -83,7 +83,9 @@ The templates remain separate:
 
 1. `application.yaml`: storefront, checkout, orders table, disabled traffic generator, and artifact bucket.
 2. `monitoring.yaml`: error-rate alarm and optional EventBridge route.
-3. `agents.yaml`: Node.js Runtime, investigation role, Code Interpreter, memory, sessions, intake, and intake failure queue.
+3. `agents.yaml`: Node.js Runtime, investigation role, Code Interpreter, memory, sessions, intake, intake failure queue, and Runtime/interpreter telemetry delivery.
+
+CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. The agent exports native Strands spans using OpenTelemetry and SigV4; Code Interpreter service spans share the agent trace. See [observability](docs/observability.md) for setup details, filters, and limitations.
 
 The sample API is public and throttled. Use a demo account and remove resources when finished.
 

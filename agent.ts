@@ -1,7 +1,13 @@
 import { Sha256 } from '@aws-crypto/sha256-js'
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
-import { fromTemporaryCredentials } from '@aws-sdk/credential-providers'
+import { fromNodeProviderChain, fromTemporaryCredentials } from '@aws-sdk/credential-providers'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
+import { context, propagation } from '@opentelemetry/api'
+import { ProtobufTraceSerializer } from '@opentelemetry/otlp-transformer'
+import { envDetector, resourceFromAttributes } from '@opentelemetry/resources'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
 import { HttpRequest } from '@smithy/protocol-http'
 import { SignatureV4 } from '@smithy/signature-v4'
 import { createHarness } from '@strands-agents/harness'
@@ -18,6 +24,7 @@ process.chdir(dirname(fileURLToPath(import.meta.url)))
 const env = process.env
 const region = env.AWS_REGION!
 const secrets = new SecretsManagerClient({ region })
+const http = new NodeHttpHandler()
 const requestSchema = z.object({
   incident_id: z.string().guid(),
   prompt: z.string(),
@@ -26,7 +33,7 @@ const requestSchema = z.object({
 })
 type Incident = z.infer<typeof requestSchema>
 
-const signer = new SignatureV4({
+const investigationSigner = new SignatureV4({
   service: 'aws-mcp', region, sha256: Sha256,
   credentials: fromTemporaryCredentials({
     clientConfig: { region },
@@ -34,16 +41,45 @@ const signer = new SignatureV4({
   }),
 })
 
-async function signedAwsFetch(input: string | URL | Request, init?: RequestInit) {
+async function signedAwsFetch(signer: SignatureV4, input: string | URL | Request, init?: RequestInit) {
   const request = new Request(input, init)
   const url = new URL(request.url)
-  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : await request.text()
+  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : new Uint8Array(await request.arrayBuffer())
   const signed = await signer.sign(new HttpRequest({
     protocol: url.protocol, hostname: url.hostname, path: url.pathname,
     method: request.method, headers: { ...Object.fromEntries(request.headers), host: url.host }, body,
   }))
   return fetch(request.url, { method: request.method, headers: signed.headers, body, signal: request.signal })
 }
+
+const traceSigner = new SignatureV4({
+  service: 'xray', region, sha256: Sha256, credentials: fromNodeProviderChain(),
+})
+const telemetry = new NodeTracerProvider({
+  resource: resourceFromAttributes({
+    ...envDetector.detect().attributes,
+    'service.name': env.OTEL_SERVICE_NAME!,
+    'deployment.environment.name': 'haunted-demo',
+  }),
+  spanProcessors: [new BatchSpanProcessor({
+    export: (spans, done) => {
+      void signedAwsFetch(traceSigner, `https://xray.${region}.amazonaws.com/v1/traces`, {
+        method: 'POST', headers: { 'Content-Type': 'application/x-protobuf' },
+        body: Buffer.from(ProtobufTraceSerializer.serializeRequest(spans)!),
+      }).then(async response => {
+        if (!response.ok) throw new Error(`Trace export: ${response.status} ${await response.text()}`)
+        for (const span of spans.filter(span => span.name === 'invoke_agent haunted-investigator')) {
+          console.log(JSON.stringify({
+            incident_id: span.attributes['incident.id'], stage: 'trace_exported', trace_id: span.spanContext().traceId,
+          }))
+        }
+        done({ code: 0 })
+      }).catch(error => { console.error(error); done({ code: 1, error }) })
+    },
+    shutdown: async () => {},
+  })],
+})
+telemetry.register()
 
 async function postReportToSlack(incidentId: string, report: string) {
   const secret = await secrets.send(new GetSecretValueCommand({ SecretId: env.SLACK_SECRET_ARN! }))
@@ -66,11 +102,22 @@ async function investigate(incident: Incident) {
   const incidentId = incident.incident_id
   console.log(JSON.stringify({ incident_id: incidentId, stage: 'investigating' }))
   const aws = new McpClient({
+    disableMcpInstrumentation: true,
     transport: new StreamableHTTPClientTransport(new URL(`https://aws-mcp.${region}.api.aws/mcp`), {
-      fetch: signedAwsFetch,
+      fetch: (input, init) => signedAwsFetch(investigationSigner, input, init),
     }),
   })
-  const interpreter = new CodeInterpreterTools({ region, identifier: env.CODE_INTERPRETER_ID! })
+  const interpreter = new CodeInterpreterTools({
+    region, identifier: env.CODE_INTERPRETER_ID!,
+    clientConfig: {
+      requestHandler: {
+        handle: (request: HttpRequest, options?: Parameters<NodeHttpHandler['handle']>[1]) => {
+          propagation.inject(context.active(), request.headers)
+          return http.handle(request, options)
+        },
+      },
+    },
+  })
   const storage = new S3Storage(env.SESSION_BUCKET!, { prefix: `sessions/${incidentId}`, region })
   const memory = new AgentCoreMemoryStore({
     memoryId: env.MEMORY_ID!, actorId: env.SERVICE_ID!, sessionId: incidentId,
@@ -78,8 +125,11 @@ async function investigate(incident: Incident) {
     writable: true, extraction: true, region,
   })
   try {
+    await interpreter.startSession(incidentId)
     await using agent = await createHarness({
       model: env.MODEL_ID!,
+      name: 'haunted-investigator',
+      traceAttributes: { 'session.id': incidentId, 'incident.id': incidentId },
       instructions: [
         `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
         `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
@@ -95,7 +145,9 @@ async function investigate(incident: Incident) {
       storage,
     })
     agent.addHook(BeforeToolCallEvent, ({ toolUse }) => {
-      console.log(JSON.stringify({ incident_id: incidentId, stage: 'tool', tool: toolUse.name }))
+      console.log(JSON.stringify({
+        incident_id: incidentId, stage: 'tool', tool: toolUse.name,
+      }))
     })
     const report = String(await agent.invoke(incident.prompt))
     if (incident.notify) await postReportToSlack(incidentId, report)
@@ -103,6 +155,7 @@ async function investigate(incident: Incident) {
     return { incident_id: incidentId, report }
   } finally {
     await interpreter.stopSession()
+    await telemetry.forceFlush()
   }
 }
 

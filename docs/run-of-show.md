@@ -182,6 +182,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 - Run `demo.py haunt`, return to the storefront, and place another order. Show “Something’s haunting checkout” and the retry button.
 - Connect the customer-visible failure to the checkout Lambda’s errors, then show the alarm changing state. Keep background shoppers running: the alarm needs at least five invocations per minute and more than 20% errors for two consecutive periods; a single failed click does not trigger it alone.
 - Follow the investigation as it runs: skill loading, memory recall, commands, queries, documentation, and analysis.
+- Open the agent trace in CloudWatch. Select an AWS MCP tool call to inspect its request/result, then a Code Interpreter call to show the generated code and the linked service span. Use `docs/observability.md` for filters.
 - Explain the evidence as it appears. Let the observed tool activity guide the commentary.
 - Open the Slack report and assess it together: cause, evidence, impact, uncertainty, and proposed recovery.
 

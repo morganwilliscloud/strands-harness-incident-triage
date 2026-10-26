@@ -33,6 +33,45 @@ Resources:
       ExecutionRoleArn: !GetAtt InterpreterRole.Arn
       NetworkConfiguration:
         NetworkMode: SANDBOX
+  TraceDestination:
+    Type: AWS::Logs::DeliveryDestination
+    Properties:
+      Name: !Sub ${NamePrefix}-traces
+      DeliveryDestinationType: XRAY
+  InterpreterTraceSource:
+    Type: AWS::Logs::DeliverySource
+    Properties:
+      Name: !Sub ${NamePrefix}-interpreter-traces
+      ResourceArn: !GetAtt Interpreter.CodeInterpreterArn
+      LogType: TRACES
+  InterpreterTraceDelivery:
+    Type: AWS::Logs::Delivery
+    Properties:
+      DeliverySourceName: !Ref InterpreterTraceSource
+      DeliveryDestinationArn: !GetAtt TraceDestination.Arn
+  InterpreterLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/bedrock-agentcore/${NamePrefix}/code-interpreter
+      RetentionInDays: 14
+  InterpreterLogSource:
+    Type: AWS::Logs::DeliverySource
+    Properties:
+      Name: !Sub ${NamePrefix}-interpreter-logs
+      ResourceArn: !GetAtt Interpreter.CodeInterpreterArn
+      LogType: APPLICATION_LOGS
+  InterpreterLogDestination:
+    Type: AWS::Logs::DeliveryDestination
+    Properties:
+      Name: !Sub ${NamePrefix}-interpreter-logs
+      DeliveryDestinationType: CWL
+      DestinationResourceArn: !GetAtt InterpreterLogs.Arn
+      OutputFormat: json
+  InterpreterLogDelivery:
+    Type: AWS::Logs::Delivery
+    Properties:
+      DeliverySourceName: !Ref InterpreterLogSource
+      DeliveryDestinationArn: !GetAtt InterpreterLogDestination.Arn
   Sessions:
     Type: AWS::S3::Bucket
     Properties:
@@ -73,6 +112,9 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
+              - Effect: Allow
+                Action: xray:PutTraceSegments
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - bedrock:InvokeModel
@@ -208,6 +250,9 @@ Resources:
       EnvironmentVariables:
         AWS_REGION: !Ref AWS::Region
         AWS_DEFAULT_REGION: !Ref AWS::Region
+        OTEL_SERVICE_NAME: !Sub ${NamePrefix}_investigator
+        OTEL_TRACES_EXPORTER: none
+        OTEL_SEMCONV_STABILITY_OPT_IN: gen_ai_latest_experimental,gen_ai_span_attributes_only
         MODEL_ID: !Ref ModelId
         CODE_INTERPRETER_ID: !GetAtt Interpreter.CodeInterpreterId
         INVESTIGATION_ROLE_ARN: !GetAtt InvestigationRole.Arn
@@ -222,6 +267,17 @@ Resources:
         APP_LOG_GROUP:
           Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
         SLACK_SECRET_ARN: !Ref SlackSecretArn
+  RuntimeTraceSource:
+    Type: AWS::Logs::DeliverySource
+    Properties:
+      Name: !Sub ${NamePrefix}-runtime-traces
+      ResourceArn: !GetAtt Investigator.AgentRuntimeArn
+      LogType: TRACES
+  RuntimeTraceDelivery:
+    Type: AWS::Logs::Delivery
+    Properties:
+      DeliverySourceName: !Ref RuntimeTraceSource
+      DeliveryDestinationArn: !GetAtt TraceDestination.Arn
   IntakeFailures:
     Type: AWS::SQS::Queue
     Properties:
