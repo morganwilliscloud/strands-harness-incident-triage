@@ -1,6 +1,6 @@
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
 import { createHarness } from '@strands-agents/harness'
-import { BeforeToolCallEvent, SessionManager } from '@strands-agents/sdk'
+import { SessionManager } from '@strands-agents/sdk'
 import { S3Storage } from '@strands-agents/sdk/storage'
 import { CodeInterpreterTools } from 'bedrock-agentcore/experimental/code-interpreter/strands'
 import { AgentCoreMemoryStore } from 'bedrock-agentcore/memory/strands'
@@ -69,11 +69,6 @@ async function investigate(incident: Incident) {
       memory: { stores: [memory] },
       session: new SessionManager({ sessionId: incidentId, storage }),
       storage,
-    })
-    agent.addHook(BeforeToolCallEvent, ({ toolUse }) => {
-      console.log(JSON.stringify({
-        incident_id: incidentId, stage: 'tool', tool: toolUse.name,
-      }))
     })
     const report = String(await agent.invoke(incident.prompt))
     if (incident.notify) await postReportToSlack(incidentId, report)
