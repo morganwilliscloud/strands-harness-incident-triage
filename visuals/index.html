@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ghosts in the Logs — visual gallery</title>
+  <style>
+    @font-face { font-family: Mono; src: url(assets/JetBrainsMono.ttf); }
+    @font-face { font-family: Body; src: url(assets/SpaceGrotesk.ttf); }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #000; color: #fff; font-family: Body, sans-serif; }
+    header, main { max-width: 1500px; margin: auto; padding: 32px; }
+    header { padding-bottom: 0; }
+    .brand { color: #00cc60; font: 600 20px Mono, monospace; }
+    h1 { font: 600 clamp(28px, 4vw, 48px) Mono, monospace; margin: 24px 0 12px; }
+    p { color: #b5c5bb; font-size: 20px; line-height: 1.5; }
+    #gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); gap: 24px; }
+    article { overflow: hidden; border: 1px solid #43534a; border-radius: 20px; background: #101712; }
+    article img { width: 100%; aspect-ratio: 16/9; display: block; }
+    h2 { font: 500 18px Mono, monospace; margin: 20px; }
+    a { color: #00cc60; text-decoration: none; }
+    a:focus-visible { outline: 3px solid #ff70eb; outline-offset: 3px; }
+    article:hover { border-color: #00cc60; }
+    .download { display: inline-block; padding: 0 20px 22px; font-size: 16px; }
+    footer { padding: 24px 32px 48px; text-align: center; color: #b5c5bb; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Strands harness / Halloween livestream</div>
+    <h1>Ghosts in the logs.</h1>
+    <p>Click a graphic to open it full size. Use your browser’s Back button to return here.</p>
+  </header>
+  <main id="gallery" aria-label="Livestream graphics"></main>
+  <footer>1920 × 1080 PNGs · Editable SVGs · Ready for screen sharing</footer>
+  <script type="module">
+    const graphics = await fetch('manifest.json').then(response => response.json())
+    const gallery = document.querySelector('#gallery')
+    for (const graphic of graphics) {
+      const article = document.createElement('article')
+      const link = document.createElement('a')
+      link.href = graphic.png
+      const image = document.createElement('img')
+      image.src = graphic.png
+      image.alt = graphic.title
+      const title = document.createElement('h2')
+      title.textContent = `${graphic.name.slice(0, 2)} / ${graphic.title}`
+      link.append(image, title)
+      const download = document.createElement('a')
+      download.href = graphic.png
+      download.download = ''
+      download.className = 'download'
+      download.textContent = 'Download PNG'
+      article.append(link, download)
+      gallery.append(article)
+    }
+  </script>
+</body>
+</html>

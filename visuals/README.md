@@ -18,6 +18,14 @@ Nine **1920 × 1080 PNGs**, matching editable SVGs, and six transparent overlays
 
 ## Use on the stream
 
+To browse the graphics, run this from the repository root:
+
+```bash
+npm --prefix visuals run preview
+```
+
+Open `http://127.0.0.1:8766`. Click a graphic to view its full-size PNG, then use the browser's Back button to return to the gallery. The preview requires Node.js but no dependency installation. It listens only on your computer; press Ctrl+C in its terminal to stop it.
+
 Add a PNG as an image source in your broadcast setup or import the PNGs into your presentation software. They are full-screen graphics; keep camera tiles beside them rather than covering diagram labels. The PNGs have the exact fonts rendered into the pixels.
 
 Use [PRESENTER-NOTES.md](PRESENTER-NOTES.md) for the explanation and technical qualifications behind each graphic. The diagrams reflect this demo's implementation, not every capability of the services.
