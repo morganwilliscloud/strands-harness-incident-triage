@@ -1,6 +1,6 @@
-# Run of show: Ghosts in the Logs: Build an AWS Incident Triage Agent with Strands Harness
+# Run of show: Ghosts in the Logs: Build an AWS Incident Triage Agent with Strands harness
 
-**Implementation:** One TypeScript agent using Harness, managed AWS MCP, and the published AgentCore Code Interpreter integration. See `VALIDATION.md` for rehearsal results.
+**Implementation:** One TypeScript agent using harness, managed AWS MCP, and the published AgentCore Code Interpreter integration. See `VALIDATION.md` for rehearsal results.
 
 
 **Date:** October 28, 2026\
@@ -8,7 +8,7 @@
 **Main host:** Leads the technical explanation, code walkthrough, and demo.\
 **Co-host:** Rafael Lopez opens the show, introduces segments, watches chat, and moderates Q&A.
 
-**Show premise:** Something is haunting our checkout application. We’ll build an incident-triage agent with Strands Harness that responds to a CloudWatch alarm, investigates AWS logs and configuration, and posts its findings to the on-call engineer in Slack.
+**Show premise:** Something is haunting our checkout application. We’ll build an incident-triage agent with Strands harness that responds to a CloudWatch alarm, investigates AWS logs and configuration, and posts its findings to the on-call engineer in Slack.
 
 Each segment lists its estimated duration and the cumulative running time at the end of that segment. Rafael can bring in a relevant audience question during natural pauses. Protect the final Q&A and closing.
 
@@ -18,7 +18,7 @@ Each segment lists its estimated duration and the cumulative running time at the
 |---|---:|---:|---|
 | Welcome and introductions | 4 min | 4 min | Rafael, then main host |
 | The haunted application and architecture | 6 min | 10 min | Main host |
-| Explain Strands and demonstrate the basic Harness | 10 min | 20 min | Main host |
+| Explain Strands and demonstrate the basic harness | 10 min | 20 min | Main host |
 | Build the incident-triage agent for our application | 10 min | 30 min | Main host, with Rafael’s questions |
 | Deploy to AWS using IaC and explain permissions | 5 min | 35 min | Main host |
 | Trigger the alarm and watch the investigation | 10 min | 45 min | Both |
@@ -35,7 +35,7 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
 |---|---|
 | Welcome | `01-title.png` |
 | Architecture | `02-architecture.png` |
-| Strands and basic Harness | `03-strands-loop.png`, then `04-harness-defaults.png` |
+| Strands and basic harness | `03-strands-loop.png`, then `04-harness-defaults.png` |
 | Customize the agent | `08-skills-context-memory.png`, `05-runtime-memory.png`, `06-runtime-interpreter.png` |
 | Deploy and explain permissions | `07-mcp-iam.png` |
 | Live investigation | `09-observability.png`, then the actual traces and Slack |
@@ -76,19 +76,19 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
 - Walk through the architecture at a high level:
   - Candy storefront → API Gateway → checkout Lambda and DynamoDB, with CloudWatch logs and metrics.
   - CloudWatch alarm → EventBridge → intake Lambda.
-  - Strands Harness agent hosted in AgentCore Runtime, using a model through Amazon Bedrock.
+  - Strands harness agent hosted in AgentCore Runtime, using a model through Amazon Bedrock.
   - AWS Toolkit and Code Interpreter for investigation and analysis.
   - Packaged runbooks, session storage, and AgentCore Memory.
   - Findings and an on-call mention posted directly to Slack.
 - State the demo’s finish line: a useful investigation report and recommended recovery steps. The engineer performs the recovery.
 
-Keep this to the flow and the purpose of each component. The application and monitoring are prepared before the show; briefly establish the healthy baseline here. From the diagram, move into the basic Harness demonstration.
+Keep this to the flow and the purpose of each component. The application and monitoring are prepared before the show; briefly establish the healthy baseline here. From the diagram, move into the basic harness demonstration.
 
 **Rafael’s bridge:**
 
-> “Well can you tell me a little bit more about the agent that you're going to be using to do the incident triage? What is Strands? What is Strands Harness? How does this work?”
+> “Well can you tell me a little bit more about the agent that you're going to be using to do the incident triage? What is Strands? What is Strands harness? How does this work?”
 
-## 3. Explain Strands and demonstrate the basic Harness
+## 3. Explain Strands and demonstrate the basic harness
 
 **Duration:** 10 minutes — puts us **20 minutes into the show**.\
 **Screen:** Terminal, `examples/basic/agent.ts`, generated checklist, and local session/memory files.
@@ -96,11 +96,11 @@ Keep this to the flow and the purpose of each component. The application and mon
 **Main host:**
 
 - Explain Strands and the agent loop: a model reasons about the task, uses tools, evaluates results, and continues.
-- Introduce Strands Harness and open `examples/basic/agent.ts`: one import, model selection, and a task.
-- Run `AWS_REGION=us-east-1 npm run basic` from the repository root. Watch Harness use its default tools to create and read back a Halloween checklist.
+- Introduce Strands harness and open `examples/basic/agent.ts`: one import, model selection, and a task.
+- Run `AWS_REGION=us-east-1 npm run basic` from the repository root. Watch harness use its default tools to create and read back a Halloween checklist.
 - Open `examples/basic/checklist.md` and connect the tool activity to the result. No custom tools or persistence configuration were needed.
 - Use that example to explain what comes by default:
-  - **Built-in tools:** shell and file operations, plus the other available Harness tools. Explain that the model chooses tools as it works.
+  - **Built-in tools:** shell and file operations, plus the other available harness tools. Explain that the model chooses tools as it works.
   - **Context management:** handling large results, retrieving offloaded details, and compacting context as needed.
   - **Local sessions:** conversation state persisted to files so a session can be resumed.
   - **Long-term memory:** retaining and recalling useful information across sessions, with local file storage as the starting point.
@@ -119,7 +119,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 **Duration:** 10 minutes — puts us **30 minutes into the show**.\
 **Screen:** `agent.ts`, with the packaged runbook opened alongside it.
 
-**Make the Harness specific to the application.**
+**Make the harness specific to the application.**
 
 - Build out the actual incident-triage agent, connecting it back to the basic example.
 - Add the task-specific instructions, application details, and Bedrock model configuration.
@@ -258,7 +258,7 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 **Main host:**
 
 - Recap the flow: an alarm starts an investigation and the engineer receives an evidence-backed Slack report.
-- Reinforce the three reusable ideas: start with Harness defaults, scope AWS permissions, and combine runbooks with experience from previous incidents.
+- Reinforce the three reusable ideas: start with harness defaults, scope AWS permissions, and combine runbooks with experience from previous incidents.
 - Point viewers to the sample and documentation.
 
 **Rafael:**
@@ -271,7 +271,7 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 
 - Have the candy storefront, architecture diagram, code, three templates, CloudWatch views, and Slack channel ready to switch between.
 - Store Slack settings in Secrets Manager. Use the deployment script's profile/region arguments and `npm run demo -- --profile PROFILE --region REGION` for the live commands; no `.env` file is required.
-- Rehearse the basic Harness CLI run and export. Have the resulting code/configuration and representative local session/memory files ready to show.
+- Rehearse the basic harness CLI run and export. Have the resulting code/configuration and representative local session/memory files ready to show.
 - Deploy the sample application and monitoring before the show and start healthy traffic early enough to establish a baseline. Make those templates available with the sample; the on-air build focuses on the agent.
 - Confirm the deployment uploaded `storefront/index.html`, open the application stack's `StorefrontUrl`, and rehearse successful checkout → `haunt` → visible failure → `reset` → successful retry.
 - Rehearse a real alarm → investigation → Slack delivery before the broadcast, including the actual Slack token, channel, and on-call mention.

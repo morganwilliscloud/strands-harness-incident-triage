@@ -3,13 +3,13 @@
 ## October 26, 2026 — Livestream visual kit
 
 - Created nine 1920×1080 PNG graphics with editable SVG sources, six transparent seasonal overlays, a contact sheet, and presenter notes. The style guide was read through the signed-in browser; the original public frog and wordmark assets and canonical fonts are included with provenance.
-- Checked the architecture and explanation against the current agent, signing helper, IAM templates, and installed Harness defaults. Graphics distinguish S3 session snapshots from AgentCore lessons, Runtime from Code Interpreter, and Runtime credentials from the assumed investigation identity.
+- Checked the architecture and explanation against the current agent, signing helper, IAM templates, and installed harness defaults. Graphics distinguish S3 session snapshots from AgentCore lessons, Runtime from Code Interpreter, and Runtime credentials from the assumed investigation identity.
 - Rendered and visually reviewed the set, corrected the frog/text overlap in the loop graphic, and checked all 209 text elements against canvas bounds. Verified every main PNG is 1920×1080 and every overlay has transparency.
 - Added visual cues to the run of show. The visual generator and dependencies are separate from the deployed agent; no AWS deployment or application code changed.
 
-## October 26, 2026 — Basic TypeScript Harness example
+## October 26, 2026 — Basic TypeScript harness example
 
-- Added `examples/basic/agent.ts` and `npm run basic`, using the existing pinned dependencies and the incident agent's Bedrock model. All Harness tools, context, session, memory, and printing settings remain at their defaults.
+- Added `examples/basic/agent.ts` and `npm run basic`, using the existing pinned dependencies and the incident agent's Bedrock model. All harness tools, context, session, memory, and printing settings remain at their defaults.
 - Type checking passed. A real local run against Bedrock successfully used `write`, `shell`, and `read` to create and read back `examples/basic/checklist.md`, then printed a summary.
 - Session `28fbc5dd` persisted a snapshot and context artifacts under the example's `.agent/sessions`. Two extracted memory files appeared under `.agent/memory`; their creation does not validate the quality of inferred preferences or demonstrate later recall. Generated files are ignored by Git.
 - Updated segment 3 of the run of show without changing its 10-minute allocation. This is a local teaching example; no AWS infrastructure or hosted agent was changed.
@@ -24,7 +24,7 @@
 ## October 26, 2026 — Standard AWS ADOT observability
 
 - Replaced the custom exporter and manual Code Interpreter trace handler with AWS ADOT Node auto-instrumentation 0.13.0. Removed `support/telemetry.ts`, direct OpenTelemetry setup dependencies, custom `traceAttributes`, and manual trace flushing from the agent.
-- `NODE_OPTIONS` preloads the two-line `observability.cjs`: register ADOT using its configured exporter, then prevent Harness 0.3.1 from installing a second provider. A first local attempt without the second line reproduced duplicate provider/context/propagator registration; the final startup completed without those errors. No custom exporter implementation remains.
+- `NODE_OPTIONS` preloads the two-line `observability.cjs`: register ADOT using its configured exporter, then prevent harness 0.3.1 from installing a second provider. A first local attempt without the second line reproduced duplicate provider/context/propagator registration; the final startup completed without those errors. No custom exporter implementation remains.
 - Deployed Runtime version 9 using the live stack template with only the Runtime environment and agent artifact updated. The pending Node.js Lambda migration was not deployed. Existing Runtime/interpreter trace deliveries and IAM permissions remain in place.
 - Hosted rehearsal `965b947c-248e-4bb6-95e2-e2347582fe4b` produced trace `6adfb1d55150b65f646de9062b42a91e`. Retrieved 54 spans linking `AgentCore.Runtime.Invoke`, incoming HTTP, the Strands agent/model/tools, AWS SDK calls, and Code Interpreter service operations. ADOT automatically attached `session.id=incident-965b947c-248e-4bb6-95e2-e2347582fe4b` to agent spans.
 - AWS MCP's `GetFunctionConfiguration` returned the actual checkout table name, with successful script and API-call status. All three interpreter tools succeeded: generated Python calculated the synthetic 20/20 error rate, file operations wrote the fixture, and a shell command read it back. Tool arguments and results are present in the spans. No manual trace headers were required for Code Interpreter correlation.
@@ -64,7 +64,7 @@
 
 ## October 26, 2026 — TypeScript migration
 
-- Agent implementation moved to one `agent.ts`, using published Harness 0.3.1, Strands SDK 1.22.0, and AgentCore SDK 0.4.6. Code Interpreter uses the SDK's experimental Strands integration. No legacy Strands tools package is installed or deployed.
+- Agent implementation moved to one `agent.ts`, using published harness 0.3.1, Strands SDK 1.22.0, and AgentCore SDK 0.4.6. Code Interpreter uses the SDK's experimental Strands integration. No legacy Strands tools package is installed or deployed.
 - Type checking and compilation passed. The local Runtime server returned a healthy `/ping` response.
 - A signed AWS MCP call from TypeScript executed `GetFunctionConfiguration` against the real sample Lambda. The result returned its actual table name and a successful `api_calls` entry. Merely listing MCP tools was not treated as an execution test.
 - A TypeScript stdio MCP client launched the published CloudWatch MCP server and retrieved the real alarm's state history with explicit UTC bounds. This verified interoperability, but CloudWatch MCP is excluded from the application and deployment at the user's request.

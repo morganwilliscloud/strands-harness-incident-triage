@@ -1,8 +1,8 @@
-# Ghosts in the Logs: AWS Incident Triage with Strands Harness
+# Ghosts in the Logs: AWS Incident Triage with Strands harness
 
-**Candy-store checkout fails → CloudWatch alarm → Harness investigation → report in Slack.**
+**Candy-store checkout fails → CloudWatch alarm → harness investigation → report in Slack.**
 
-The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; AWS ADOT is loaded at startup through `observability.cjs`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
+The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; AWS ADOT is loaded at startup through `observability.cjs`. harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
@@ -13,7 +13,7 @@ flowchart TD
     Browser[Midnight Candy Co. storefront] -->|POST /checkout| App[Checkout Lambda → DynamoDB]
     App --> Alarm[CloudWatch alarm]
     Alarm --> Intake[EventBridge → intake Lambda]
-    Intake --> Agent[TypeScript Strands Harness in AgentCore Runtime]
+    Intake --> Agent[TypeScript Strands harness in AgentCore Runtime]
     Agent -->|Signed requests with investigation role| Toolkit[Managed AWS MCP Server]
     Toolkit --> AWS[Application logs, metrics, and configuration]
     Agent --> Interpreter[AgentCore Code Interpreter: separate role and SANDBOX networking]
@@ -23,7 +23,7 @@ flowchart TD
     Agent --> Slack[Application posts report and on-call mention]
 ```
 
-## Start with the basic Harness
+## Start with the basic harness
 
 Open [examples/basic/agent.ts](examples/basic/agent.ts) for the introductory walkthrough, then run:
 
@@ -49,7 +49,7 @@ Code Interpreter receives the collected evidence for further analysis. Its files
 
 `postReportToSlack()` reads `bot_token`, `channel_id`, and `oncall_user_id` from one Secrets Manager JSON secret on each notification. It checks Slack's application-level `ok` result before reporting success. The model cannot choose the channel or access a Slack-posting tool.
 
-`await using` shuts down Harness and flushes pending memory work at scope exit. `SessionManager` with unified `S3Storage` preserves the incident across follow-ups. `AgentCoreMemoryStore` uses a stable service actor across incidents and a different session ID for each alarm. AgentCore generates episodic records after detecting a completed episode. Extraction is asynchronous; flushing events does not mean a searchable lesson exists yet.
+`await using` shuts down harness and flushes pending memory work at scope exit. `SessionManager` with unified `S3Storage` preserves the incident across follow-ups. `AgentCoreMemoryStore` uses a stable service actor across incidents and a different session ID for each alarm. AgentCore generates episodic records after detecting a completed episode. Extraction is asynchronous; flushing events does not mean a searchable lesson exists yet.
 
 ## Permissions and execution boundaries
 
@@ -85,7 +85,7 @@ npm run check
 bash scripts/deploy.sh DEMO_PROFILE us-east-1 bedrock/MODEL_ID haunted-oncall/slack
 ```
 
-The model argument uses Harness's provider-qualified form, for example `bedrock/us.anthropic.claude-sonnet-5-5` if that inference profile is available to the account. An optional fifth argument changes the resource prefix from `haunted`.
+The model argument uses harness's provider-qualified form, for example `bedrock/us.anthropic.claude-sonnet-5-5` if that inference profile is available to the account. An optional fifth argument changes the resource prefix from `haunted`.
 
 Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script bundles `agent.ts` and its support modules into one JavaScript entrypoint, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. The rehearsal CLI is `demo.ts`; the four inline Lambda handlers use Node.js 22. No Python setup is required. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
 

@@ -14,11 +14,11 @@ Read the top row left to right, then follow the event into Runtime. Intake Lambd
 
 The model chooses a tool; Strands executes it and feeds back the result. The loop can continue through several tools or finish with an answer. This is a conceptual loop, not a separate deployment architecture. Reasoning does not require displaying private model reasoning.
 
-## 04-harness-defaults: What Harness gives you
+## 04-harness-defaults: What harness gives you
 
-Use while the basic TypeScript example is visible. Defaults verified against Harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.
+Use while the basic TypeScript example is visible. Defaults verified against harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.
 
-## 05-runtime-memory: Harness on Runtime with sessions and memory
+## 05-runtime-memory: harness on Runtime with sessions and memory
 
 Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.
 

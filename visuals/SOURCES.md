@@ -24,14 +24,14 @@ The diagrams were checked against this repository:
 - `templates/agents.yaml`: Runtime and interpreter boundaries, IAM policies, memory strategy, and S3 sessions.
 - `templates/monitoring.yaml`: CloudWatch alarm and EventBridge-to-Lambda routing.
 - `observability.cjs` and `docs/observability.md`: ADOT setup and verified hosted traces.
-- Installed Harness `0.3.1` and Strands SDK `1.22.0`: default tools, context handling, local session and memory storage, progressive skill loading, and console printing.
+- Installed harness `0.3.1` and Strands SDK `1.22.0`: default tools, context handling, local session and memory storage, progressive skill loading, and console printing.
 
 ## Deliberate distinctions
 
 - The intake Lambda dispatches; AgentCore Runtime runs the agent.
 - `ACCEPTED` acknowledges a request; it does not certify investigation or Slack completion.
 - The model selects tools; the SDK executes them.
-- Harness's local defaults are configurable. Host shell/file access is not automatically isolated.
+- harness's local defaults are configurable. Host shell/file access is not automatically isolated.
 - S3 snapshots and AgentCore lessons are this demo's chosen integrations. AgentCore Memory also supports short-term event storage.
 - Code Interpreter is a separate execution environment with its own role and filesystem. `SANDBOX` networking is not described as an air gap.
 - The agent assumes the investigation role before signing AWS MCP requests. Managed AWS MCP is not the demo's Code Interpreter instance.

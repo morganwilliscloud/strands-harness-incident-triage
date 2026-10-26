@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: One Harness investigator with AWS Toolkit, scoped IAM, memory, sessions, and Slack reporting.
+Description: One harness investigator with AWS Toolkit, scoped IAM, memory, sessions, and Slack reporting.
 Parameters:
   ApplicationStack:
     Type: String

@@ -48,7 +48,7 @@ This trace links the Runtime service span, incoming HTTP request, Strands agent/
 
 The deployment installs `@aws/aws-distro-opentelemetry-node-autoinstrumentation@0.13.0`. `NODE_OPTIONS` preloads `observability.cjs` before the agent imports its dependencies. `AGENT_OBSERVABILITY_ENABLED=true` selects AWS's agent-observability defaults, including its SigV4-authenticated OTLP exporter. Strands supplies the agent/model/tool spans; ADOT instruments HTTP and AWS SDK calls and propagates their trace context.
 
-The startup file has two lines: load ADOT, then set `OTEL_TRACES_EXPORTER=none` for Harness. ADOT reads the initial `otlp` setting and configures its exporter before that change. The second line prevents Harness 0.3.1 from trying to register a second provider. It does not shut down ADOT. There is no custom exporter, trace provider, request handler, or manual flush in the agent.
+The startup file has two lines: load ADOT, then set `OTEL_TRACES_EXPORTER=none` for harness. ADOT reads the initial `otlp` setting and configures its exporter before that change. The second line prevents harness 0.3.1 from trying to register a second provider. It does not shut down ADOT. There is no custom exporter, trace provider, request handler, or manual flush in the agent.
 
 The template enables only `http`, `aws-sdk`, and `undici` instrumentation and selects `baggage,xray,tracecontext` propagators. `OTEL_SEMCONV_STABILITY_OPT_IN` retains GenAI input/output attributes for the walkthrough. Additional ADOT log/metric exporters are disabled; Runtime console logs, Code Interpreter application logs, and AWS service metrics use their existing platform deliveries.
 

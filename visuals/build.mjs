@@ -72,7 +72,7 @@ current='01-title'
 let s=`<rect width="1920" height="1080" fill="#000"/><rect x="1050" width="870" height="1080" fill="url(#fade)"/><rect x="1150" y="150" width="770" height="850" fill="url(#dots)"/>`
 s+=wordmark(94,70,360)+pill(94,174,330,'HALLOWEEN LIVE BUILD',C.pink)
 s+=text(88,370,'Ghosts in',110,C.white,'mono',600)+text(88,508,'the logs.',110,C.green,'mono',600)
-s+=text(94,605,'Build an AWS incident triage agent',42,C.white)+text(94,667,'with Strands Harness',42,C.white)
+s+=text(94,605,'Build an AWS incident triage agent',42,C.white)+text(94,667,'with Strands harness',42,C.white)
 s+=frog(1300,366,380,C.green,true)+ghost(1160,268,1.1,C.pink)+ghost(1750,612,1.3,C.white)+pumpkin(1360,833,1.45)
 s+=line(1170,796,1800,796,C.green,2)+text(1660,872,'On-call wizard.',29,C.green,'mono',600,'middle')
 s+=pill(94,812,220,'DETECT',C.yellow,26)+arrow([[335,834],[389,834]],C.muted)+pill(410,812,320,'INVESTIGATE',C.green,26)+arrow([[750,834],[804,834]],C.muted)+pill(826,812,220,'REPORT',C.pink,26)
@@ -84,7 +84,7 @@ s=base('An alarm becomes an investigation.','One investigator, with managed serv
 const top=[['Candy storefront','API Gateway → checkout Lambda → DynamoDB','box'],['CloudWatch alarm','Checkout errors cross the threshold.','alarm'],['EventBridge','Routes the ALARM state-change event.','route'],['Intake Lambda','Builds the prompt and invokes Runtime.','lambda']]
 for(let i=0;i<4;i++){let x=80+i*450;s+=smallCard(x,292,410,182,top[i][0],top[i][1],i===1?C.red:C.yellow,top[i][2]);if(i<3)s+=arrow([[x+412,383],[x+442,383]],C.yellow,2)}
 s+=arrow([[1635,476],[1635,521],[954,521],[954,584]],C.yellow)
-s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'AGENTCORE RUNTIME',23,C.blue,'mono',600)+text(596,694,'Strands Harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,635,145)
+s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'AGENTCORE RUNTIME',23,C.blue,'mono',600)+text(596,694,'Strands harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,635,145)
 s+=smallCard(80,560,390,151,'AWS MCP','Reads app logs, metrics and configuration.',C.green,'cloud')+smallCard(80,749,390,151,'Code Interpreter','Runs generated analysis code.',C.orange,'terminal')
 s+=arrow([[560,649],[478,649]],C.green)+arrow([[478,676],[551,676]],C.green)+arrow([[560,758],[514,758],[514,821],[478,821]],C.orange)+arrow([[478,848],[533,848],[533,785],[551,785]],C.orange)
 s+=smallCard(1450,622,390,182,'Slack report','Findings + next steps + on-call mention.',C.pink,'chat')+arrow([[1352,704],[1441,704]],C.pink)
@@ -105,26 +105,26 @@ s+=frog(880,530,160,C.green,true)+text(960,738,'STRANDS AGENT',24,C.green,'mono'
 await save(current,s,'The Strands agent loop','The model chooses a tool; Strands executes it and feeds back the result. The loop can continue through several tools or finish with an answer. This is a conceptual loop, not a separate deployment architecture. Reasoning does not require displaying private model reasoning.')
 
 current='04-harness-defaults'
-s=base('The agent, already equipped.','createHarness() assembles the defaults. You choose what to change.','WHAT HARNESS ADDS',4)
+s=base('The agent, already equipped.','createHarness() assembles the defaults. You choose what to change.','Strands harness',4)
 s+=rect(662,395,597,449,'#0b2514',C.green,32)+frog(875,489,180,C.green,true)+text(960,720,'createHarness()',34,C.white,'mono',600,'middle')+text(960,775,'A configured Strands agent',28,C.pale,'body',500,'middle')
 const cards=[['Built-in tools','Shell and file tools, ready for the model to use.','tool',C.yellow],['Context management','Offload large results. Retrieve details. Compact context.','file',C.blue],['Local sessions','Save conversation snapshots; resume with a session ID.','box',C.pink],['Long-term memory','Extract useful facts and retrieve them in later sessions.','memory',C.pink],['Skills','Discover runbooks and load procedures when relevant.','book',C.green],['Default output','See generated text and tool activity in the console.','terminal',C.yellow]]
 for(let i=0;i<6;i++){const right=i>=3,j=i%3,x=right?1340:80,y=292+j*224;s+=smallCard(x,y,500,185,cards[i][0],cards[i][1],cards[i][3],cards[i][2]);s+=line(right?1259:580,right?620:y+93,right?1340:662,right?y+93:620,C.line,2)}
 s+=text(960,963,'Basic demo: defaults on. Incident agent: tools and providers selected explicitly.',27,C.muted,'body',500,'middle')
-await save(current,s,'What Harness gives you','Use while the basic TypeScript example is visible. Defaults verified against Harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.')
+await save(current,s,'What harness gives you','Use while the basic TypeScript example is visible. Defaults verified against harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.')
 
 current='05-runtime-memory'
 s=base('Remember the incident. Learn for next time.','This demo uses two stores, with two different jobs.','RUNTIME + MEMORY',5)
-s+=rect(80,336,650,523,'#101826',C.blue,32)+text(118,387,'AGENTCORE RUNTIME',25,C.blue,'mono',600)+rect(120,429,570,277,'#0b2514',C.green,24)+frog(535,495,125,C.green,true)+text(155,485,'Strands Harness',33,C.white,'mono',600)+text(155,557,'Incident A',30,C.white,'mono')+text(155,613,'investigate → report',27,C.pale)+text(118,778,'Same service identity.',31,C.white)+text(118,825,'New session for each incident.',29,C.muted)
+s+=rect(80,336,650,523,'#101826',C.blue,32)+text(118,387,'AGENTCORE RUNTIME',25,C.blue,'mono',600)+rect(120,429,570,277,'#0b2514',C.green,24)+frog(535,495,125,C.green,true)+text(155,485,'Strands harness',33,C.white,'mono',600)+text(155,557,'Incident A',30,C.white,'mono')+text(155,613,'investigate → report',27,C.pale)+text(118,778,'Same service identity.',31,C.white)+text(118,825,'New session for each incident.',29,C.muted)
 s+=rect(1070,292,770,242,C.card,C.pink,24)+icon('box',1100,325,C.pink,.7)+text(1172,360,'S3 session snapshots',34,C.white,'mono',600)+text(1100,423,'“What have we done in this incident?”',31,C.white)+text(1100,477,'Conversation and state for follow-up questions.',27,C.muted)
 s+=rect(1070,649,770,272,C.card,C.pink,24)+icon('memory',1100,682,C.pink,.7)+text(1172,717,'AgentCore Memory',34,C.white,'mono',600)+text(1100,780,'“What helped in previous incidents?”',31,C.white)+text(1100,832,'Events → asynchronous extraction → lessons',27,C.muted)+text(1100,882,'Retrieve a lesson; verify it against current evidence.',26,C.pink)
 s+=arrow([[730,469],[1060,469]],C.pink)+arrow([[1060,506],[740,506]],C.pink)+text(900,437,'save / restore',24,C.pink,'mono',500,'middle')
 s+=arrow([[730,744],[1060,744]],C.pink)+arrow([[1060,781],[740,781]],C.pink)+text(900,709,'events / recall',24,C.pink,'mono',500,'middle')
 s+=text(80,952,'S3 is this demo’s snapshot backend; AgentCore Memory also has short-term event storage.',26,C.muted)
-await save(current,s,'Harness on Runtime with sessions and memory','Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.')
+await save(current,s,'harness on Runtime with sessions and memory','Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.')
 
 current='06-runtime-interpreter'
 s=base('The agent runs here. Its analysis runs there.','Runtime hosts the investigator; Code Interpreter executes generated code.','TWO EXECUTION ENVIRONMENTS',6)
-s+=rect(80,300,765,620,'#101826',C.blue,32)+text(120,358,'AGENTCORE RUNTIME',30,C.blue,'mono',600)+rect(120,407,685,228,'#0b2514',C.green,24)+frog(607,459,154,C.green,true)+text(153,467,'Strands Harness',38,C.white,'mono',600)+text(153,528,'Model calls + tool coordination',28,C.pale)+text(153,582,'Packaged source + runbook',28,C.pale)
+s+=rect(80,300,765,620,'#101826',C.blue,32)+text(120,358,'AGENTCORE RUNTIME',30,C.blue,'mono',600)+rect(120,407,685,228,'#0b2514',C.green,24)+frog(607,459,154,C.green,true)+text(153,467,'Strands harness',38,C.white,'mono',600)+text(153,528,'Model calls + tool coordination',28,C.pale)+text(153,582,'Packaged source + runbook',28,C.pale)
 s+=icon('key',122,674,C.blue,.66)+text(190,711,'Runtime execution role',29,C.white,'mono',600)+wrap(121,768,'Model, sessions, memory, interpreter access and the Slack secret.',674,28)+pill(121,853,372,'HOST SHELL DISABLED',C.blue,23)
 s+=rect(1075,300,765,620,'#21170d',C.orange,32)+text(1115,358,'CODE INTERPRETER',30,C.orange,'mono',600)+rect(1115,407,685,228,'#101010',C.line,24)
 s+=text(1149,452,'synthetic-example.py',24,C.muted,'mono')+text(1149,511,'requests = 20',31,C.white,'mono')+text(1149,561,'errors = 20',31,C.white,'mono')+text(1149,611,'print(errors / requests)',31,C.green,'mono')
@@ -138,7 +138,7 @@ s=base('AWS access follows the credentials.','Our agent assumes the investigatio
 const xs=[80,540,1000,1460],ws=[380,380,380,380]
 const cs=[C.blue,C.yellow,C.green,C.white]
 for(let i=0;i<4;i++){s+=rect(xs[i],334,ws[i],310,C.card,cs[i],24)+numbered(xs[i]+37,334,i+1,cs[i]);if(i<3)s+=arrow([[xs[i]+383,483],[xs[i+1]-10,483]],C.yellow)}
-s+=frog(110,395,97,C.green,true)+text(220,425,'Harness',27,C.white,'mono',600)+text(220,470,'on Runtime',25,C.muted)+wrap(110,548,'The Runtime role may call STS AssumeRole.',320,29)
+s+=frog(110,395,97,C.green,true)+text(220,425,'harness',27,C.white,'mono',600)+text(220,470,'on Runtime',25,C.muted)+wrap(110,548,'The Runtime role may call STS AssumeRole.',320,29)
 s+=icon('key',568,375,C.yellow,.75)+text(568,486,'Temporary credentials',25,C.yellow,'mono',600)+wrap(568,543,'For the scoped investigation role.',324,29)
 s+=icon('cloud',1030,380,C.green,.78)+text(1030,486,'Managed AWS MCP',27,C.white,'mono',600)+wrap(1030,543,'Receives the signed request; executes AWS calls.',324,29)
 s+=icon('chart',1490,375,C.white,.72)+text(1490,486,'AWS APIs',28,C.white,'mono',600)+wrap(1490,543,'Authorize calls and return evidence.',320,29)
