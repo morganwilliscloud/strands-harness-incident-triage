@@ -2,7 +2,7 @@
 
 **Candy-store checkout fails → CloudWatch alarm → Harness investigation → report in Slack.**
 
-The agent is one TypeScript file, `agent.ts`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
+The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; tracing setup lives in `support/telemetry.ts`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
@@ -27,7 +27,7 @@ flowchart TD
 
 `CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application starts one interpreter session before invoking the agent and stops it in `finally`, including after an investigation error.
 
-The AWS MCP connection uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs MCP requests with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector. `disableMcpInstrumentation: true` prevents Strands SDK 1.22.0 from adding `_meta` to tool arguments, which AWS MCP rejects. The agent still records each MCP tool call and result in its own trace.
+The `createAwsMcp()` helper in `support/aws.ts` uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs MCP requests with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector. `disableMcpInstrumentation: true` prevents Strands SDK 1.22.0 from adding `_meta` to tool arguments, which AWS MCP rejects. The agent still records each MCP tool call and result in its own trace.
 
 The model writes AWS investigation scripts for MCP's `aws___run_script`. The server executes AWS calls using the investigation credentials. Scripts must follow the tool's current schema: `code`, keyword arguments to asynchronous `call_boto3`, PascalCase AWS operation names, and a final result expression. Check `api_calls` and the returned execution status: an MCP response can have `isError: false` while the execution result contains an error.
 
@@ -73,7 +73,7 @@ bash scripts/deploy.sh DEMO_PROFILE us-east-1 bedrock/MODEL_ID haunted-oncall/sl
 
 The model argument uses Harness's provider-qualified form, for example `bedrock/us.anthropic.claude-sonnet-5-5` if that inference profile is available to the account. An optional fifth argument changes the resource prefix from `haunted`.
 
-Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script compiles `agent.ts`, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. The rehearsal CLI is `demo.ts`; the four inline Lambda handlers use Node.js 22. No Python setup is required. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
+Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script bundles `agent.ts` and its support modules into one JavaScript entrypoint, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. The rehearsal CLI is `demo.ts`; the four inline Lambda handlers use Node.js 22. No Python setup is required. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
 
 Provision the stack before the livestream. AgentCore Memory creation and deletion take several minutes; the five-minute deployment segment should update a prepared stack rather than depend on first-time provisioning.
 

@@ -1,5 +1,11 @@
 # Validation
 
+## October 26, 2026 — Extract infrastructure helpers
+
+- Moved signing and MCP connection setup to `support/aws.ts`, and OpenTelemetry export/context propagation to `support/telemetry.ts`. `agent.ts` retains the investigation flow, tool selection, memory, sessions, Slack reporting, and Runtime entrypoint.
+- The build now bundles local support modules into the single deployed JavaScript entrypoint while leaving installed packages external. Type checking and the Linux ARM64 deployment archive build passed.
+- The bundled entrypoint started locally and returned HTTP 200 from `/ping`; it contains no unresolved relative support imports. This refactor was not deployed, and no new live investigation or trace export was performed.
+
 ## October 26, 2026 — Remove the Python setup
 
 - Replaced `demo.py` with `demo.ts`, removed `requirements.txt`, converted the four inline Lambda handlers to Node.js 22, and replaced Python ZIP creation with the `zip` command. Setup and livestream commands now use npm.

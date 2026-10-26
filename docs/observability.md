@@ -42,7 +42,7 @@ Set the time range to October 26, 2026, 18:31–18:34 UTC (2:31–2:34 p.m. East
 
 ## How it is configured
 
-`agent.ts` registers an OpenTelemetry provider. Strands supplies the agent/model/tool spans. A small application exporter serializes OTLP protobuf and signs requests to the regional X-Ray OTLP endpoint using the Runtime role. `xray:PutTraceSegments` is the only extra Runtime permission. This transport is application code using official SDK components, not an ADOT auto-instrumentation package.
+`agent.ts` calls `setupTelemetry()` from `support/telemetry.ts`, which registers an OpenTelemetry provider. The same module exports the traced Code Interpreter request handler; signing is shared through `support/aws.ts`. Strands supplies the agent/model/tool spans. A small application exporter serializes OTLP protobuf and signs requests to the regional X-Ray OTLP endpoint using the Runtime role. `xray:PutTraceSegments` is the only extra Runtime permission. This transport is application code using official SDK components, not an ADOT auto-instrumentation package.
 
 `OTEL_TRACES_EXPORTER=none` prevents Harness from installing its default unsigned exporter. It does not disable the explicitly registered provider. `OTEL_SEMCONV_STABILITY_OPT_IN` selects GenAI span attributes so code and results can be inspected. The Code Interpreter SDK request handler propagates the active W3C trace context to the service.
 

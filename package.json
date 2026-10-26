@@ -8,7 +8,7 @@
   "scripts": {
     "demo": "tsx demo.ts",
     "check": "tsc --noEmit",
-    "build": "esbuild agent.ts --platform=node --target=node22 --format=esm --packages=external --outfile=dist/agent.js"
+    "build": "esbuild agent.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/agent.js"
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "5.2.0",

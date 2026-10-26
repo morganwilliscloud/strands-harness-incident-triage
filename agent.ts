@@ -1,17 +1,6 @@
-import { Sha256 } from '@aws-crypto/sha256-js'
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
-import { fromNodeProviderChain, fromTemporaryCredentials } from '@aws-sdk/credential-providers'
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
-import { context, propagation } from '@opentelemetry/api'
-import { ProtobufTraceSerializer } from '@opentelemetry/otlp-transformer'
-import { envDetector, resourceFromAttributes } from '@opentelemetry/resources'
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
-import { NodeHttpHandler } from '@smithy/node-http-handler'
-import { HttpRequest } from '@smithy/protocol-http'
-import { SignatureV4 } from '@smithy/signature-v4'
 import { createHarness } from '@strands-agents/harness'
-import { BeforeToolCallEvent, McpClient, SessionManager } from '@strands-agents/sdk'
+import { BeforeToolCallEvent, SessionManager } from '@strands-agents/sdk'
 import { S3Storage } from '@strands-agents/sdk/storage'
 import { CodeInterpreterTools } from 'bedrock-agentcore/experimental/code-interpreter/strands'
 import { AgentCoreMemoryStore } from 'bedrock-agentcore/memory/strands'
@@ -19,12 +8,14 @@ import { BedrockAgentCoreApp } from 'bedrock-agentcore/runtime'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
+import { createAwsMcp } from './support/aws.js'
+import { setupTelemetry, tracedRequestHandler } from './support/telemetry.js'
 
 process.chdir(dirname(fileURLToPath(import.meta.url)))
 const env = process.env
 const region = env.AWS_REGION!
 const secrets = new SecretsManagerClient({ region })
-const http = new NodeHttpHandler()
+const telemetry = setupTelemetry({ region, serviceName: env.OTEL_SERVICE_NAME! })
 const requestSchema = z.object({
   incident_id: z.string().guid(),
   prompt: z.string(),
@@ -32,54 +23,6 @@ const requestSchema = z.object({
   notify: z.boolean().default(true),
 })
 type Incident = z.infer<typeof requestSchema>
-
-const investigationSigner = new SignatureV4({
-  service: 'aws-mcp', region, sha256: Sha256,
-  credentials: fromTemporaryCredentials({
-    clientConfig: { region },
-    params: { RoleArn: env.INVESTIGATION_ROLE_ARN!, RoleSessionName: 'haunted-investigation' },
-  }),
-})
-
-async function signedAwsFetch(signer: SignatureV4, input: string | URL | Request, init?: RequestInit) {
-  const request = new Request(input, init)
-  const url = new URL(request.url)
-  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : new Uint8Array(await request.arrayBuffer())
-  const signed = await signer.sign(new HttpRequest({
-    protocol: url.protocol, hostname: url.hostname, path: url.pathname,
-    method: request.method, headers: { ...Object.fromEntries(request.headers), host: url.host }, body,
-  }))
-  return fetch(request.url, { method: request.method, headers: signed.headers, body, signal: request.signal })
-}
-
-const traceSigner = new SignatureV4({
-  service: 'xray', region, sha256: Sha256, credentials: fromNodeProviderChain(),
-})
-const telemetry = new NodeTracerProvider({
-  resource: resourceFromAttributes({
-    ...envDetector.detect().attributes,
-    'service.name': env.OTEL_SERVICE_NAME!,
-    'deployment.environment.name': 'haunted-demo',
-  }),
-  spanProcessors: [new BatchSpanProcessor({
-    export: (spans, done) => {
-      void signedAwsFetch(traceSigner, `https://xray.${region}.amazonaws.com/v1/traces`, {
-        method: 'POST', headers: { 'Content-Type': 'application/x-protobuf' },
-        body: Buffer.from(ProtobufTraceSerializer.serializeRequest(spans)!),
-      }).then(async response => {
-        if (!response.ok) throw new Error(`Trace export: ${response.status} ${await response.text()}`)
-        for (const span of spans.filter(span => span.name === 'invoke_agent haunted-investigator')) {
-          console.log(JSON.stringify({
-            incident_id: span.attributes['incident.id'], stage: 'trace_exported', trace_id: span.spanContext().traceId,
-          }))
-        }
-        done({ code: 0 })
-      }).catch(error => { console.error(error); done({ code: 1, error }) })
-    },
-    shutdown: async () => {},
-  })],
-})
-telemetry.register()
 
 async function postReportToSlack(incidentId: string, report: string) {
   const secret = await secrets.send(new GetSecretValueCommand({ SecretId: env.SLACK_SECRET_ARN! }))
@@ -101,22 +44,10 @@ async function postReportToSlack(incidentId: string, report: string) {
 async function investigate(incident: Incident) {
   const incidentId = incident.incident_id
   console.log(JSON.stringify({ incident_id: incidentId, stage: 'investigating' }))
-  const aws = new McpClient({
-    disableMcpInstrumentation: true,
-    transport: new StreamableHTTPClientTransport(new URL(`https://aws-mcp.${region}.api.aws/mcp`), {
-      fetch: (input, init) => signedAwsFetch(investigationSigner, input, init),
-    }),
-  })
+  const aws = createAwsMcp({ region, roleArn: env.INVESTIGATION_ROLE_ARN! })
   const interpreter = new CodeInterpreterTools({
     region, identifier: env.CODE_INTERPRETER_ID!,
-    clientConfig: {
-      requestHandler: {
-        handle: (request: HttpRequest, options?: Parameters<NodeHttpHandler['handle']>[1]) => {
-          propagation.inject(context.active(), request.headers)
-          return http.handle(request, options)
-        },
-      },
-    },
+    clientConfig: { requestHandler: tracedRequestHandler },
   })
   const storage = new S3Storage(env.SESSION_BUCKET!, { prefix: `sessions/${incidentId}`, region })
   const memory = new AgentCoreMemoryStore({
