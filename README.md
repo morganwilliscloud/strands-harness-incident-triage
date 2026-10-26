@@ -21,6 +21,16 @@ flowchart TD
     Agent --> Slack[Application posts report and on-call mention]
 ```
 
+## Start with the basic Harness
+
+Open [examples/basic/agent.ts](examples/basic/agent.ts) for the introductory walkthrough, then run:
+
+```bash
+AWS_REGION=us-east-1 npm run basic
+```
+
+It uses the default tools to create and read back a Halloween checklist, with local sessions and memory left at their defaults. AWS credentials with Bedrock access are required. See [the example guide](examples/basic/README.md) for presenter notes, then move to the incident agent below.
+
 ## Agent walkthrough
 
 The intake Lambda turns a CloudWatch alarm event into a prompt, uses its event ID for the incident and Runtime session IDs, and makes the signed `InvokeAgentRuntime` request. It does not run the investigation. The Runtime acknowledges the request immediately and tracks the ongoing investigation with `addAsyncTask` and `completeAsyncTask`. Intake retries cover dispatch failures, not investigation failures after acknowledgement.

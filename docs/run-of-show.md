@@ -77,24 +77,24 @@ Keep this to the flow and the purpose of each component. The application and mon
 ## 3. Explain Strands and demonstrate the basic Harness
 
 **Duration:** 10 minutes — puts us **20 minutes into the show**.\
-**Screen:** Terminal, simple Harness example, exported code/configuration, and local session/memory files.
+**Screen:** Terminal, `examples/basic/agent.ts`, generated checklist, and local session/memory files.
 
 **Main host:**
 
 - Explain Strands and the agent loop: a model reasons about the task, uses tools, evaluates results, and continues.
-- Introduce Strands Harness and show a simple starting example.
-- Run a small task from the command line so viewers can see the basic Harness working.
-- Export the basic Harness and open the resulting code/configuration.
+- Introduce Strands Harness and open `examples/basic/agent.ts`: one import, model selection, and a task.
+- Run `AWS_REGION=us-east-1 npm run basic` from the repository root. Watch Harness use its default tools to create and read back a Halloween checklist.
+- Open `examples/basic/checklist.md` and connect the tool activity to the result. No custom tools or persistence configuration were needed.
 - Use that example to explain what comes by default:
   - **Built-in tools:** shell and file operations, plus the other available Harness tools. Explain that the model chooses tools as it works.
   - **Context management:** handling large results, retrieving offloaded details, and compacting context as needed.
   - **Local sessions:** conversation state persisted to files so a session can be resumed.
   - **Long-term memory:** retaining and recalling useful information across sessions, with local file storage as the starting point.
   - **Skills:** a way to supply procedures that load when relevant.
-- Show the local files that make session persistence and memory concrete. Distinguish continuing a conversation from recalling experience in a new one.
+- Inspect `examples/basic/.agent/sessions` for saved conversation state. Inspect `.agent/memory` only if a reusable memory was extracted during rehearsal; the checklist task may not produce one. Distinguish continuing a conversation from recalling experience in a new one.
 - Explain that these defaults give us a working starting point, and we can configure or replace the pieces for our application.
 
-Demonstrate the simple run and export; explain the defaults without trying to force every context-management or memory behavior to occur during this short example.
+Demonstrate the simple run and its source; explain the defaults without trying to force every context-management or memory behavior to occur during this short example. The tools run locally; the next segment replaces host execution with the incident agent's restricted tools and remote interpreter.
 
 **Rafael’s bridge:**
 

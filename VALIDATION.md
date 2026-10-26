@@ -1,5 +1,12 @@
 # Validation
 
+## October 26, 2026 — Basic TypeScript Harness example
+
+- Added `examples/basic/agent.ts` and `npm run basic`, using the existing pinned dependencies and the incident agent's Bedrock model. All Harness tools, context, session, memory, and printing settings remain at their defaults.
+- Type checking passed. A real local run against Bedrock successfully used `write`, `shell`, and `read` to create and read back `examples/basic/checklist.md`, then printed a summary.
+- Session `28fbc5dd` persisted a snapshot and context artifacts under the example's `.agent/sessions`. Two extracted memory files appeared under `.agent/memory`; their creation does not validate the quality of inferred preferences or demonstrate later recall. Generated files are ignored by Git.
+- Updated segment 3 of the run of show without changing its 10-minute allocation. This is a local teaching example; no AWS infrastructure or hosted agent was changed.
+
 ## October 26, 2026 — One asynchronous invocation path
 
 - Removed the `background` request field and conditional branch. Every invocation registers an AgentCore asynchronous task, returns `ACCEPTED`, and completes the task after investigation and cleanup. The intake template no longer sends the flag.
