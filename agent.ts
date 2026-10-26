@@ -39,20 +39,26 @@ async function postReportToSlack(incidentId: string, report: string) {
 }
 
 async function investigate(incident: Incident) {
+
   const incidentId = incident.incident_id
   console.log(JSON.stringify({ incident_id: incidentId, stage: 'investigating' }))
   const aws = createAwsMcp({ region, roleArn: env.INVESTIGATION_ROLE_ARN! })
+
   const interpreter = new CodeInterpreterTools({
     region, identifier: env.CODE_INTERPRETER_ID!,
   })
+
   const storage = new S3Storage(env.SESSION_BUCKET!, { prefix: `sessions/${incidentId}`, region })
+
   const memory = new AgentCoreMemoryStore({
     memoryId: env.MEMORY_ID!, actorId: env.SERVICE_ID!, sessionId: incidentId,
     namespacePath: '/services/{actorId}/', name: 'incident_history',
     writable: true, extraction: true, region,
   })
+
   try {
     await interpreter.startSession(incidentId)
+
     await using agent = await createHarness({
       model: 'bedrock/us.anthropic.claude-sonnet-5-5',
       name: 'haunted-investigator',
@@ -70,10 +76,13 @@ async function investigate(incident: Incident) {
       session: new SessionManager({ sessionId: incidentId, storage }),
       storage,
     })
+
     const report = String(await agent.invoke(incident.prompt))
+
     if (incident.notify) await postReportToSlack(incidentId, report)
     console.log(JSON.stringify({ incident_id: incidentId, stage: 'completed' }))
     return { incident_id: incidentId, report }
+
   } finally {
     await interpreter.stopSession()
   }
