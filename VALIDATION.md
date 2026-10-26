@@ -1,5 +1,17 @@
 # Validation
 
+## October 26, 2026 — Standard AWS ADOT observability
+
+- Replaced the custom exporter and manual Code Interpreter trace handler with AWS ADOT Node auto-instrumentation 0.13.0. Removed `support/telemetry.ts`, direct OpenTelemetry setup dependencies, custom `traceAttributes`, and manual trace flushing from the agent.
+- `NODE_OPTIONS` preloads the two-line `observability.cjs`: register ADOT using its configured exporter, then prevent Harness 0.3.1 from installing a second provider. A first local attempt without the second line reproduced duplicate provider/context/propagator registration; the final startup completed without those errors. No custom exporter implementation remains.
+- Deployed Runtime version 9 using the live stack template with only the Runtime environment and agent artifact updated. The pending Node.js Lambda migration was not deployed. Existing Runtime/interpreter trace deliveries and IAM permissions remain in place.
+- Hosted rehearsal `965b947c-248e-4bb6-95e2-e2347582fe4b` produced trace `6adfb1d55150b65f646de9062b42a91e`. Retrieved 54 spans linking `AgentCore.Runtime.Invoke`, incoming HTTP, the Strands agent/model/tools, AWS SDK calls, and Code Interpreter service operations. ADOT automatically attached `session.id=incident-965b947c-248e-4bb6-95e2-e2347582fe4b` to agent spans.
+- AWS MCP's `GetFunctionConfiguration` returned the actual checkout table name, with successful script and API-call status. All three interpreter tools succeeded: generated Python calculated the synthetic 20/20 error rate, file operations wrote the fixture, and a shell command read it back. Tool arguments and results are present in the spans. No manual trace headers were required for Code Interpreter correlation.
+- Transport negotiation and initial snapshot lookup produced HTTP 400/405 and S3 404 spans. The requested operation and tool results succeeded; this does not mean every low-level request had a successful status.
+- Background-mode rehearsal `f26bc38c-c904-4abd-aee7-065dd6303adc` returned `ACCEPTED`, then completed Code Interpreter execution with result `42`. Its 36-span trace, `6adfb21a1824d15843e3870407af7489`, links the completed background agent and interpreter operation to the original Runtime request. Both rehearsal interpreter sessions are `TERMINATED`.
+- Type checking, compilation, CloudFormation linting, and Linux ARM64 packaging passed. The uploaded archive includes `observability.cjs` and the locked ADOT dependencies. Tests used `notify=false`, sent no Slack messages, and introduced no application fault; the alarm remains `OK`.
+- Production npm audit reports 12 dependency entries (8 moderate, 4 high). The underlying advisories concern database instrumentation exposing `db.user` and malformed-header denial of service in the Jaeger propagator. This deployment enables only HTTP/AWS SDK/Undici instrumentation and baggage/X-Ray/W3C trace propagators. The affected packages are still installed; no dependency overrides, patches, or clean-audit claim are made.
+
 ## October 26, 2026 — Extract infrastructure helpers
 
 - Moved signing and MCP connection setup to `support/aws.ts`, and OpenTelemetry export/context propagation to `support/telemetry.ts`. `agent.ts` retains the investigation flow, tool selection, memory, sessions, Slack reporting, and Runtime entrypoint.

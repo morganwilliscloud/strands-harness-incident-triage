@@ -2,7 +2,7 @@
 
 **Candy-store checkout fails → CloudWatch alarm → Harness investigation → report in Slack.**
 
-The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; tracing setup lives in `support/telemetry.ts`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
+The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; AWS ADOT is loaded at startup through `observability.cjs`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
@@ -83,7 +83,7 @@ The templates remain separate:
 2. `monitoring.yaml`: error-rate alarm and optional EventBridge route.
 3. `agents.yaml`: Node.js Runtime, investigation role, Code Interpreter, memory, sessions, intake, intake failure queue, and Runtime/interpreter telemetry delivery.
 
-CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. The agent exports native Strands spans using OpenTelemetry and SigV4; Code Interpreter service spans share the agent trace. See [observability](docs/observability.md) for setup details, filters, and limitations.
+CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. AWS ADOT exports native Strands spans and instruments HTTP and AWS SDK calls. Runtime and Code Interpreter service telemetry is enabled by the template. See [observability](docs/observability.md) for setup details, filters, and limitations.
 
 The sample API is public and throttled. Use a demo account and remove resources when finished.
 

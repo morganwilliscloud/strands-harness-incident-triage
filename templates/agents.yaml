@@ -250,8 +250,14 @@ Resources:
       EnvironmentVariables:
         AWS_REGION: !Ref AWS::Region
         AWS_DEFAULT_REGION: !Ref AWS::Region
+        NODE_OPTIONS: --require ./observability.cjs
+        AGENT_OBSERVABILITY_ENABLED: 'true'
         OTEL_SERVICE_NAME: !Sub ${NamePrefix}_investigator
-        OTEL_TRACES_EXPORTER: none
+        OTEL_TRACES_EXPORTER: otlp
+        OTEL_LOGS_EXPORTER: none
+        OTEL_METRICS_EXPORTER: none
+        OTEL_NODE_ENABLED_INSTRUMENTATIONS: http,aws-sdk,undici
+        OTEL_PROPAGATORS: baggage,xray,tracecontext
         OTEL_SEMCONV_STABILITY_OPT_IN: gen_ai_latest_experimental,gen_ai_span_attributes_only
         MODEL_ID: !Ref ModelId
         CODE_INTERPRETER_ID: !GetAtt Interpreter.CodeInterpreterId

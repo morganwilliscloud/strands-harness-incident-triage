@@ -2,19 +2,21 @@
 
 Open [AgentCore observability](https://console.aws.amazon.com/bedrock-agentcore/observability?region=us-east-1) in the demo account, select us-east-1, and set the time range to include your invocation. The agent service is `haunted_investigator`; the agent span is `invoke_agent haunted-investigator`.
 
-CloudWatch Transaction Search provides the trace waterfall. Agent spans include `session.id` and `incident.id`, both set to the incident UUID. Runtime logs print a `trace_exported` record with the trace ID after the agent span is accepted by the exporter. Allow a few minutes for searchable ingestion.
+CloudWatch Transaction Search provides the trace waterfall. AWS ADOT propagates the Runtime session context and adds `session.id` automatically. In this demo its value is `incident-<incident UUID>`. The agent does not set custom trace attributes. Allow a few minutes for searchable ingestion.
 
 ## What to open
 
 | Span | What it shows |
 |---|---|
+| `AgentCore.Runtime.Invoke` | The hosted invocation |
 | `invoke_agent haunted-investigator` | Agent input/output and duration |
 | `chat` | Model messages and inference details |
 | `execute_tool aws___run_script` | Requested AWS script and returned evidence, including API-call outcomes |
 | `execute_tool executeCode` | Generated Python and returned output |
 | `execute_tool executeCommand` | Shell command executed in Code Interpreter and its output |
 | `execute_tool fileOperations` | File operation and result |
-| `AgentCore.BuiltinTools.InvokeCodeInterpreter` | Linked Code Interpreter service operation, request ID, session ID, and status |
+| `BedrockAgentCore.InvokeCodeInterpreter` | The automatically instrumented AWS SDK call |
+| `AgentCore.BuiltinTools.InvokeCodeInterpreter` | The linked Code Interpreter service operation, request ID, session ID, and status |
 
 Tool spans expose `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result`. Tool success alone does not prove every nested AWS operation succeeded: inspect the returned MCP execution status and `api_calls`.
 
@@ -26,7 +28,7 @@ fields @timestamp, name, traceId, spanId, parentSpanId
 | sort @timestamp asc
 ```
 
-Copy a `traceId`, then query the entire trace. Interpreter service spans have the same trace ID but do not carry the incident attribute:
+Copy a `traceId`, then query the entire trace, including service spans that may not carry the incident/session label:
 
 ```text
 fields @timestamp, name, spanId, parentSpanId, @message
@@ -38,28 +40,32 @@ Code Interpreter application logs are in `/aws/vendedlogs/bedrock-agentcore/haun
 
 ## Verified rehearsal to explore
 
-Set the time range to October 26, 2026, 18:31–18:34 UTC (2:31–2:34 p.m. Eastern). Trace `44afb4c603fc61b482396b8a40660f83`, incident `46db98ee-8d9d-4087-9f14-8c0ed153111c`, contains a real AWS MCP configuration read and all three interpreter tools. The error-rate calculation uses a clearly labeled synthetic fixture. It is not an actual outage.
+Set the time range to October 26, 2026, 20:02–20:04 UTC (4:02–4:04 p.m. Eastern). Trace `6adfb1d55150b65f646de9062b42a91e`, incident `965b947c-248e-4bb6-95e2-e2347582fe4b`, contains a real AWS MCP configuration read and all three interpreter tools. The error-rate calculation uses a clearly labeled synthetic fixture. It is not an actual outage.
+
+This trace links the Runtime service span, incoming HTTP request, Strands agent/tool spans, AWS SDK calls, and Code Interpreter service operations. Transport negotiation and first-use session loading also produced HTTP 400/405 and S3 404 spans; the actual MCP operation and all requested tools succeeded. Inspect the operation and returned result rather than treating every red transport span as an investigation failure.
 
 ## How it is configured
 
-`agent.ts` calls `setupTelemetry()` from `support/telemetry.ts`, which registers an OpenTelemetry provider. The same module exports the traced Code Interpreter request handler; signing is shared through `support/aws.ts`. Strands supplies the agent/model/tool spans. A small application exporter serializes OTLP protobuf and signs requests to the regional X-Ray OTLP endpoint using the Runtime role. `xray:PutTraceSegments` is the only extra Runtime permission. This transport is application code using official SDK components, not an ADOT auto-instrumentation package.
+The deployment installs `@aws/aws-distro-opentelemetry-node-autoinstrumentation@0.13.0`. `NODE_OPTIONS` preloads `observability.cjs` before the agent imports its dependencies. `AGENT_OBSERVABILITY_ENABLED=true` selects AWS's agent-observability defaults, including its SigV4-authenticated OTLP exporter. Strands supplies the agent/model/tool spans; ADOT instruments HTTP and AWS SDK calls and propagates their trace context.
 
-`OTEL_TRACES_EXPORTER=none` prevents Harness from installing its default unsigned exporter. It does not disable the explicitly registered provider. `OTEL_SEMCONV_STABILITY_OPT_IN` selects GenAI span attributes so code and results can be inspected. The Code Interpreter SDK request handler propagates the active W3C trace context to the service.
+The startup file has two lines: load ADOT, then set `OTEL_TRACES_EXPORTER=none` for Harness. ADOT reads the initial `otlp` setting and configures its exporter before that change. The second line prevents Harness 0.3.1 from trying to register a second provider. It does not shut down ADOT. There is no custom exporter, trace provider, request handler, or manual flush in the agent.
 
-The agent stack configures Runtime and Code Interpreter trace delivery, plus Code Interpreter application-log delivery. CloudWatch Transaction Search and its sampling settings are account-level prerequisites. They were already enabled in this demo account and were not changed by this stack.
+The template enables only `http`, `aws-sdk`, and `undici` instrumentation and selects `baggage,xray,tracecontext` propagators. `OTEL_SEMCONV_STABILITY_OPT_IN` retains GenAI input/output attributes for the walkthrough. Additional ADOT log/metric exporters are disabled; Runtime console logs, Code Interpreter application logs, and AWS service metrics use their existing platform deliveries.
+
+The stack configures Runtime and Code Interpreter trace delivery, plus Code Interpreter application-log delivery. The Runtime role retains `xray:PutTraceSegments`. CloudWatch Transaction Search and its sampling settings are account-level prerequisites; they were already enabled in this account and were not changed.
 
 Strands SDK 1.22.0's MCP instrumentation places `_meta` inside tool arguments, causing AWS MCP schema validation errors. The supported `disableMcpInstrumentation` option disables that injection. Agent-side MCP tool spans remain enabled; this does not expose AWS MCP's internal sandbox trace.
 
-## Boundaries
+## Boundaries and dependency status
 
-This captures agent and tool execution, not an operating-system audit of every instruction inside the interpreter. Runtime platform invocation spans and interpreter session start/cleanup can have separate roots; the verified link is from the agent's execution tool span to Code Interpreter's service operation. The application starts one interpreter session explicitly before invoking the agent, avoiding a race when the SDK lazily starts sessions for concurrent first tool calls.
+This captures agent and tool execution, not an operating-system audit of every instruction inside the interpreter. The application starts one interpreter session explicitly before invoking the agent, avoiding a race when the SDK lazily starts sessions for concurrent first tool calls.
 
 Inputs, generated code, retrieved evidence, and outputs are telemetry data. People with access to these logs/traces can read them. The Slack token stays in the application posting function rather than in model/tool arguments.
 
-The full Node ADOT package was evaluated but not retained because its dependency graph reported security advisories. The narrower deployed dependency set passed the production npm audit without overrides. This is a point-in-time check, not a permanent security guarantee.
+On October 26, 2026, npm audit reported 12 dependency entries (8 moderate, 4 high) for the installed ADOT dependency graph. The underlying advisories concern database instrumentation exposing `db.user` and malformed-header denial of service in the Jaeger propagator. Database instrumentation and the Jaeger propagator are not selected in this configuration. The affected packages remain installed, so this is not a clean audit or a claim that the dependencies are patched. No dependency overrides or forced upgrades were applied.
 
 Official references:
 
+- [AWS ADOT JavaScript agent-observability configuration](https://github.com/aws-observability/aws-otel-js-instrumentation#generative-ai)
 - [AgentCore observability configuration](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html)
 - [Code Interpreter observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-observability.html)
-- [AgentCore telemetry](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-telemetry.html)

@@ -9,13 +9,11 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { createAwsMcp } from './support/aws.js'
-import { setupTelemetry, tracedRequestHandler } from './support/telemetry.js'
 
 process.chdir(dirname(fileURLToPath(import.meta.url)))
 const env = process.env
 const region = env.AWS_REGION!
 const secrets = new SecretsManagerClient({ region })
-const telemetry = setupTelemetry({ region, serviceName: env.OTEL_SERVICE_NAME! })
 const requestSchema = z.object({
   incident_id: z.string().guid(),
   prompt: z.string(),
@@ -47,7 +45,6 @@ async function investigate(incident: Incident) {
   const aws = createAwsMcp({ region, roleArn: env.INVESTIGATION_ROLE_ARN! })
   const interpreter = new CodeInterpreterTools({
     region, identifier: env.CODE_INTERPRETER_ID!,
-    clientConfig: { requestHandler: tracedRequestHandler },
   })
   const storage = new S3Storage(env.SESSION_BUCKET!, { prefix: `sessions/${incidentId}`, region })
   const memory = new AgentCoreMemoryStore({
@@ -60,7 +57,6 @@ async function investigate(incident: Incident) {
     await using agent = await createHarness({
       model: 'bedrock/us.anthropic.claude-sonnet-5-5',
       name: 'haunted-investigator',
-      traceAttributes: { 'session.id': incidentId, 'incident.id': incidentId },
       instructions: [
         `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
         `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
@@ -86,7 +82,6 @@ async function investigate(incident: Incident) {
     return { incident_id: incidentId, report }
   } finally {
     await interpreter.stopSession()
-    await telemetry.forceFlush()
   }
 }
 
