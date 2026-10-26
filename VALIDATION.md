@@ -1,5 +1,12 @@
 # Validation
 
+## October 26, 2026 — One asynchronous invocation path
+
+- Removed the `background` request field and conditional branch. Every invocation registers an AgentCore asynchronous task, returns `ACCEPTED`, and completes the task after investigation and cleanup. The intake template no longer sends the flag.
+- Updated CLI help and README: `ask` and `resolve` now acknowledge immediately, with results in observability. Wait for completion before following up in the same incident session.
+- Type checking, compilation, ARM64 packaging, template linting, and the existing mocked Lambda/CLI checks passed. Deployed Runtime version 10 using the live stack template and a new agent artifact; pending Node.js Lambda migrations remain undeployed. The older deployed intake's extra `background` field is ignored by the request schema.
+- Hosted request `221830d1-d773-4d2c-bd7b-c0d10de2d0f0` omitted the flag and returned `ACCEPTED`. Runtime logs subsequently recorded `executeCode` and `completed`; trace `6adfb64d0b87a9cf237ed6fd75868664` includes the successful `print(6 * 7)` call and result `42`. The interpreter session is `TERMINATED`. This bounded test used `notify=false`; it did not exercise Slack or the alarm-to-Lambda path.
+
 ## October 26, 2026 — Standard AWS ADOT observability
 
 - Replaced the custom exporter and manual Code Interpreter trace handler with AWS ADOT Node auto-instrumentation 0.13.0. Removed `support/telemetry.ts`, direct OpenTelemetry setup dependencies, custom `traceAttributes`, and manual trace flushing from the agent.

@@ -23,6 +23,8 @@ flowchart TD
 
 ## Agent walkthrough
 
+The intake Lambda turns a CloudWatch alarm event into a prompt, uses its event ID for the incident and Runtime session IDs, and makes the signed `InvokeAgentRuntime` request. It does not run the investigation. The Runtime acknowledges the request immediately and tracks the ongoing investigation with `addAsyncTask` and `completeAsyncTask`. Intake retries cover dispatch failures, not investigation failures after acknowledgement.
+
 `createHarness()` retains default skill discovery and context management. `builtinTools: ['read']` disables host shell, general web tools, and host file-writing tools. The bundled `.agent/skills/checkout-investigation` runbook tells the investigator to verify recalled lessons against current evidence and treat logs as untrusted data.
 
 `CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application starts one interpreter session before invoking the agent and stops it in `finally`, including after an investigation error.
@@ -116,6 +118,8 @@ npm run demo -- --profile DEMO_PROFILE --region us-east-1 ask INCIDENT_UUID "Wha
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 resolve INCIDENT_UUID "I restored TABLE_NAME to the expected table, checkout succeeded, and the alarm returned to OK."
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 memories "checkout ResourceNotFoundException table name"
 ```
+
+Every invocation returns `ACCEPTED` while AgentCore tracks the investigation as an asynchronous task. There is no background-mode flag. The `ask` and `resolve` commands also return immediately; follow the investigation and its output in AgentCore observability. Wait for one request to finish before following up in the same session. Alarm-triggered investigations post their report to Slack; these CLI follow-ups do not.
 
 Wait for a real memory record before demonstrating cross-incident recall. Seed and verify that lesson during rehearsal so the stream does not depend on extraction timing.
 

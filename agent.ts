@@ -17,7 +17,6 @@ const secrets = new SecretsManagerClient({ region })
 const requestSchema = z.object({
   incident_id: z.string().guid(),
   prompt: z.string(),
-  background: z.boolean().default(false),
   notify: z.boolean().default(true),
 })
 type Incident = z.infer<typeof requestSchema>
@@ -89,12 +88,9 @@ const app = new BedrockAgentCoreApp({
   invocationHandler: {
     requestSchema,
     process: async (incident) => {
-      if (incident.background) {
-        const task = app.addAsyncTask('investigation', { incident_id: incident.incident_id })
-        void investigate(incident).catch(console.error).finally(() => app.completeAsyncTask(task))
-        return { incident_id: incident.incident_id, status: 'ACCEPTED' }
-      }
-      return investigate(incident)
+      const task = app.addAsyncTask('investigation', { incident_id: incident.incident_id })
+      void investigate(incident).catch(console.error).finally(() => app.completeAsyncTask(task))
+      return { incident_id: incident.incident_id, status: 'ACCEPTED' }
     },
   },
 })

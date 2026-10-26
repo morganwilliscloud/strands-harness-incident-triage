@@ -337,7 +337,6 @@ Resources:
               payload: Buffer.from(JSON.stringify({
                 incident_id: event.id,
                 prompt: `Investigate this CloudWatch alarm and report your findings: ${JSON.stringify(event)}`,
-                background: true,
               })),
             }))
             return JSON.parse(await response.response.transformToString())

@@ -27,7 +27,10 @@ reset
 status
 ask INCIDENT_UUID "Question"
 resolve INCIDENT_UUID "Confirmed resolution"
-memories "Search query"`)
+memories "Search query"
+
+ask and resolve return ACCEPTED; follow their results in AgentCore observability.
+Wait for completion before sending another request to the same incident session.`)
   process.exit(0)
 }
 const command = z.enum(['start-traffic', 'stop-traffic', 'haunt', 'reset', 'status', 'ask', 'resolve', 'memories']).parse(positionals[0])
