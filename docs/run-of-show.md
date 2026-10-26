@@ -179,7 +179,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 **Main host:**
 
 - Introduce the configuration failure.
-- Run `demo.py haunt`, return to the storefront, and place another order. Show “Something’s haunting checkout” and the retry button.
+- Run `npm run demo -- haunt`, return to the storefront, and place another order. Show “Something’s haunting checkout” and the retry button.
 - Connect the customer-visible failure to the checkout Lambda’s errors, then show the alarm changing state. Keep background shoppers running: the alarm needs at least five invocations per minute and more than 20% errors for two consecutive periods; a single failed click does not trigger it alone.
 - Follow the investigation as it runs: skill loading, memory recall, commands, queries, documentation, and analysis.
 - Open the agent trace in CloudWatch. Select an AWS MCP tool call to inspect its request/result, then a Code Interpreter call to show the generated code and the linked service span. Use `docs/observability.md` for filters.
@@ -256,7 +256,7 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 ## Presenter preparation and timing notes
 
 - Have the candy storefront, architecture diagram, code, three templates, CloudWatch views, and Slack channel ready to switch between.
-- Store Slack settings in Secrets Manager. Use the deployment script's profile/region arguments and `demo.py --profile PROFILE --region REGION` for the live commands; no `.env` file is required.
+- Store Slack settings in Secrets Manager. Use the deployment script's profile/region arguments and `npm run demo -- --profile PROFILE --region REGION` for the live commands; no `.env` file is required.
 - Rehearse the basic Harness CLI run and export. Have the resulting code/configuration and representative local session/memory files ready to show.
 - Deploy the sample application and monitoring before the show and start healthy traffic early enough to establish a baseline. Make those templates available with the sample; the on-air build focuses on the agent.
 - Confirm the deployment uploaded `storefront/index.html`, open the application stack's `StorefrontUrl`, and rehearse successful checkout → `haunt` → visible failure → `reset` → successful retry.

@@ -51,7 +51,7 @@ These boundaries limit tool authority; they do not guarantee that every maliciou
 
 ## Setup and deployment
 
-Use Node.js 22 or newer, npm, Python 3.12 or newer for the small rehearsal CLI, and AWS CLI credentials for the demo account. No `.env` file is used.
+Use Node.js 22 or newer, npm, the `zip` command, and AWS CLI credentials for the demo account. No `.env` file is used.
 
 Create a Slack app with `chat:write`, invite it to the demo channel, and store these values in a Secrets Manager JSON secret named `haunted-oncall/slack`:
 
@@ -68,14 +68,12 @@ Use the same AWS account and region as the agent and the default Secrets Manager
 ```bash
 npm ci --ignore-scripts
 npm run check
-uv venv --python 3.12
-uv pip install --python .venv/bin/python -r requirements.txt
 bash scripts/deploy.sh DEMO_PROFILE us-east-1 bedrock/MODEL_ID haunted-oncall/slack
 ```
 
 The model argument uses Harness's provider-qualified form, for example `bedrock/us.anthropic.claude-sonnet-5-5` if that inference profile is available to the account. An optional fifth argument changes the resource prefix from `haunted`.
 
-Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script compiles `agent.ts`, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. `requirements.txt` is only for `demo.py`; the agent does not use Python dependencies. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
+Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script compiles `agent.ts`, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. The rehearsal CLI is `demo.ts`; the four inline Lambda handlers use Node.js 22. No Python setup is required. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
 
 Provision the stack before the livestream. AgentCore Memory creation and deletion take several minutes; the five-minute deployment segment should update a prepared stack rather than depend on first-time provisioning.
 
@@ -93,10 +91,12 @@ The sample API is public and throttled. Use a demo account and remove resources 
 
 Open the application stack's `StorefrontUrl` and place a successful demo order. The commands discover resource IDs from CloudFormation. Use `--prefix` before the command if you deployed under another prefix.
 
+`--profile` is optional; omit it to use your default AWS credential chain. `npm run demo -- --help` lists the available commands.
+
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 start-traffic
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 haunt
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 status
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 start-traffic
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 haunt
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 status
 ```
 
 Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for two consecutive one-minute periods. Allow additional time for metric publication and alarm evaluation.
@@ -104,17 +104,17 @@ Try checkout again to show the visible failure. The fault changes Lambda's `TABL
 Watch Runtime logs, AWS MCP calls, Code Interpreter analysis, and the Slack report. The investigation proposes recovery; it does not apply the fix.
 
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 reset
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 status
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 stop-traffic
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 reset
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 status
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 stop-traffic
 ```
 
 Verify successful checkout and the alarm's recovery. Follow up in the original incident session without sending another Slack notification:
 
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 ask INCIDENT_UUID "What evidence supports the suspected configuration error?"
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 resolve INCIDENT_UUID "I restored TABLE_NAME to the expected table, checkout succeeded, and the alarm returned to OK."
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 memories "checkout ResourceNotFoundException table name"
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 ask INCIDENT_UUID "What evidence supports the suspected configuration error?"
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 resolve INCIDENT_UUID "I restored TABLE_NAME to the expected table, checkout succeeded, and the alarm returned to OK."
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 memories "checkout ResourceNotFoundException table name"
 ```
 
 Wait for a real memory record before demonstrating cross-incident recall. Seed and verify that lesson during rehearsal so the stream does not depend on extraction timing.

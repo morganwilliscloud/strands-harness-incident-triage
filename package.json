@@ -6,6 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "demo": "tsx demo.ts",
     "check": "tsc --noEmit",
     "build": "esbuild agent.ts --platform=node --target=node22 --format=esm --packages=external --outfile=dist/agent.js"
   },
@@ -29,6 +30,11 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-agentcore": "3.1132.0",
+    "@aws-sdk/client-cloudformation": "3.1132.0",
+    "@aws-sdk/client-cloudwatch": "3.1132.0",
+    "@aws-sdk/client-eventbridge": "3.1132.0",
+    "@aws-sdk/client-lambda": "3.1132.0",
     "@types/node": "^22.0.0",
     "esbuild": "0.28.2",
     "tsx": "4.23.13",

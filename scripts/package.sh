@@ -10,16 +10,6 @@ cp dist/agent.js "$package_dir/agent.js"
 cp -R .agent "$package_dir/.agent"
 package_path=$(cd "$package_dir" && pwd)
 archive_path="$(pwd)/.build/agent-$(date -u +%Y%m%dT%H%M%SZ).zip"
-python3 -I -S - "$package_path" "$archive_path" <<'PY'
-import pathlib
-import sys
-import zipfile
-
-root = pathlib.Path(sys.argv[1])
-with zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as archive:
-    for path in sorted(root.rglob("*")):
-        if path.is_file() and "__pycache__" not in path.parts:
-            archive.write(path, path.relative_to(root))
-PY
+(cd "$package_path" && zip -q -r "$archive_path" .)
 printf '%s\n' "$archive_path" > .build/archive-path
 printf '%s\n' "$archive_path"

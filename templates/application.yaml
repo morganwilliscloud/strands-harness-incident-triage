@@ -48,7 +48,7 @@ Resources:
   Checkout:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: python3.12
+      Runtime: nodejs22.x
       Handler: index.handler
       Role: !GetAtt CheckoutRole.Arn
       Timeout: 10
@@ -60,25 +60,28 @@ Resources:
           TABLE_NAME: !Ref Orders
       Code:
         ZipFile: |
-          import json
-          import os
-          import uuid
-          import boto3
+          const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb')
+          const { randomUUID } = require('node:crypto')
+          const dynamodb = new DynamoDBClient({})
 
-          table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
-
-          def handler(event, context):
-              body = json.loads(event.get("body") or "{}")
-              quantity = body.get("quantity", 1)
-              if type(quantity) is not int or not 1 <= quantity <= 20:
-                  return {"statusCode": 400, "body": json.dumps({"message": "Choose between 1 and 20 bags."})}
-              order_id = str(uuid.uuid4())
-              print(json.dumps({"event": "checkout.started", "order_id": order_id}))
-              if int(order_id[-1], 16) % 4 == 0:
-                  print(json.dumps({"event": "checkout.promotion", "level": "WARNING", "message": "Expired coupon ignored"}))
-              table.put_item(Item={"order_id": order_id, "item": "midnight-mix", "quantity": quantity})
-              print(json.dumps({"event": "checkout.completed", "order_id": order_id}))
-              return {"statusCode": 200, "body": json.dumps({"order_id": order_id})}
+          exports.handler = async event => {
+            const body = JSON.parse(event.body || '{}')
+            const quantity = body.quantity === undefined ? 1 : body.quantity
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+              return { statusCode: 400, body: JSON.stringify({ message: 'Choose between 1 and 20 bags.' }) }
+            }
+            const order_id = randomUUID()
+            console.log({ event: 'checkout.started', order_id })
+            if (parseInt(order_id.at(-1), 16) % 4 === 0) {
+              console.warn({ event: 'checkout.promotion', message: 'Expired coupon ignored' })
+            }
+            await dynamodb.send(new PutItemCommand({
+              TableName: process.env.TABLE_NAME,
+              Item: { order_id: { S: order_id }, item: { S: 'midnight-mix' }, quantity: { N: String(quantity) } },
+            }))
+            console.log({ event: 'checkout.completed', order_id })
+            return { statusCode: 200, body: JSON.stringify({ order_id }) }
+          }
   CheckoutLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -141,7 +144,7 @@ Resources:
   Storefront:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: python3.12
+      Runtime: nodejs22.x
       Handler: index.handler
       Role: !GetAtt StorefrontRole.Arn
       Timeout: 10
@@ -150,18 +153,19 @@ Resources:
           ARTIFACT_BUCKET: !Ref Artifacts
       Code:
         ZipFile: |
-          import os
-          import boto3
+          const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
+          const s3 = new S3Client({})
 
-          s3 = boto3.client("s3")
-
-          def handler(event, context):
-              page = s3.get_object(Bucket=os.environ["ARTIFACT_BUCKET"], Key="storefront/index.html")
-              return {
-                  "statusCode": 200,
-                  "headers": {"content-type": "text/html; charset=utf-8", "cache-control": "no-store"},
-                  "body": page["Body"].read().decode("utf-8"),
-              }
+          exports.handler = async () => {
+            const page = await s3.send(new GetObjectCommand({
+              Bucket: process.env.ARTIFACT_BUCKET, Key: 'storefront/index.html',
+            }))
+            return {
+              statusCode: 200,
+              headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+              body: await page.Body.transformToString(),
+            }
+          }
   StorefrontLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -210,7 +214,7 @@ Resources:
   Traffic:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: python3.12
+      Runtime: nodejs22.x
       Handler: index.handler
       Role: !GetAtt TrafficRole.Arn
       Timeout: 50
@@ -219,16 +223,17 @@ Resources:
           APP_FUNCTION: !Ref Checkout
       Code:
         ZipFile: |
-          import os
-          import boto3
+          const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda')
+          const client = new LambdaClient({})
 
-          client = boto3.client("lambda")
-
-          def handler(event, context):
-              for _ in range(20):
-                  response = client.invoke(FunctionName=os.environ["APP_FUNCTION"], Payload=b"{}")
-                  response["Payload"].read()
-                  print({"status": response.get("FunctionError", "OK")})
+          exports.handler = async () => {
+            for (let i = 0; i < 20; i++) {
+              const response = await client.send(new InvokeCommand({
+                FunctionName: process.env.APP_FUNCTION, Payload: Buffer.from('{}'),
+              }))
+              console.log({ status: response.FunctionError || 'OK' })
+            }
+          }
   TrafficSchedule:
     Type: AWS::Events::Rule
     Properties:

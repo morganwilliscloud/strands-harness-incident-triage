@@ -311,7 +311,7 @@ Resources:
   Intake:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: python3.12
+      Runtime: nodejs22.x
       Handler: index.handler
       Role: !GetAtt IntakeRole.Arn
       Timeout: 120
@@ -320,25 +320,22 @@ Resources:
           AGENT_ARN: !GetAtt Investigator.AgentRuntimeArn
       Code:
         ZipFile: |
-          import json
-          import os
-          import boto3
-          from botocore.config import Config
+          const { BedrockAgentCoreClient, InvokeAgentRuntimeCommand } = require('@aws-sdk/client-bedrock-agentcore')
+          const runtime = new BedrockAgentCoreClient({ requestHandler: { requestTimeout: 110000 } })
 
-          runtime = boto3.client("bedrock-agentcore", config=Config(read_timeout=110))
-
-          def handler(event, context):
-              response = runtime.invoke_agent_runtime(
-                  agentRuntimeArn=os.environ["AGENT_ARN"],
-                  runtimeSessionId=f"incident-{event['id']}",
-                  contentType="application/json",
-                  payload=json.dumps({
-                      "incident_id": event["id"],
-                      "prompt": f"Investigate this CloudWatch alarm and report your findings: {json.dumps(event)}",
-                      "background": True,
-                  }).encode(),
-              )
-              return json.loads(response["response"].read())
+          exports.handler = async event => {
+            const response = await runtime.send(new InvokeAgentRuntimeCommand({
+              agentRuntimeArn: process.env.AGENT_ARN,
+              runtimeSessionId: `incident-${event.id}`,
+              contentType: 'application/json',
+              payload: Buffer.from(JSON.stringify({
+                incident_id: event.id,
+                prompt: `Investigate this CloudWatch alarm and report your findings: ${JSON.stringify(event)}`,
+                background: true,
+              })),
+            }))
+            return JSON.parse(await response.response.transformToString())
+          }
   IntakeRetries:
     Type: AWS::Lambda::EventInvokeConfig
     Properties:
