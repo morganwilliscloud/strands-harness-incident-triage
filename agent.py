@@ -25,12 +25,12 @@ os.chdir(root)
 
 
 def post_report_to_slack(incident_id, report):
-    token = boto3.client("secretsmanager").get_secret_value(
+    slack = json.loads(boto3.client("secretsmanager").get_secret_value(
         SecretId=os.environ["SLACK_SECRET_ARN"]
-    )["SecretString"]
-    WebClient(token=token).chat_postMessage(
-        channel=os.environ["SLACK_CHANNEL_ID"],
-        text=f"👻 <@{os.environ['SLACK_ONCALL_USER_ID']}> Incident `{incident_id}`\n\n{report}",
+    )["SecretString"])
+    WebClient(token=slack["bot_token"]).chat_postMessage(
+        channel=slack["channel_id"],
+        text=f"👻 <@{slack['oncall_user_id']}> Incident `{incident_id}`\n\n{report}",
         unfurl_links=False,
         unfurl_media=False,
     )

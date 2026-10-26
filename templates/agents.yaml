@@ -14,10 +14,7 @@ Parameters:
     Type: String
   SlackSecretArn:
     Type: String
-  SlackChannelId:
-    Type: String
-  SlackOncallUserId:
-    Type: String
+    Description: ARN of the JSON secret containing bot_token, channel_id, and oncall_user_id.
 Resources:
   Sessions:
     Type: AWS::S3::Bucket
@@ -183,8 +180,6 @@ Resources:
         APP_LOG_GROUP:
           Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
         SLACK_SECRET_ARN: !Ref SlackSecretArn
-        SLACK_CHANNEL_ID: !Ref SlackChannelId
-        SLACK_ONCALL_USER_ID: !Ref SlackOncallUserId
   IntakeFailures:
     Type: AWS::SQS::Queue
     Properties:

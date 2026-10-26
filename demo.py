@@ -1,11 +1,13 @@
 import argparse
 import json
-import os
 
 import boto3
 from botocore.config import Config
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--profile", required=True)
+parser.add_argument("--region", required=True)
+parser.add_argument("--prefix", default="haunted")
 commands = parser.add_subparsers(dest="command", required=True)
 commands.add_parser("start-traffic")
 commands.add_parser("stop-traffic")
@@ -20,14 +22,15 @@ memories = commands.add_parser("memories")
 memories.add_argument("query")
 args = parser.parse_args()
 
-cloudformation = boto3.client("cloudformation")
+session = boto3.Session(profile_name=args.profile, region_name=args.region)
+cloudformation = session.client("cloudformation")
 application = {
     item["OutputKey"]: item["OutputValue"]
-    for item in cloudformation.describe_stacks(StackName=os.environ["APPLICATION_STACK"])["Stacks"][0]["Outputs"]
+    for item in cloudformation.describe_stacks(StackName=f"{args.prefix}-app")["Stacks"][0]["Outputs"]
 }
 
 if args.command in ("start-traffic", "stop-traffic"):
-    events = boto3.client("events")
+    events = session.client("events")
     if args.command == "start-traffic":
         events.enable_rule(Name=application["TrafficRule"])
     else:
@@ -35,7 +38,7 @@ if args.command in ("start-traffic", "stop-traffic"):
     print(args.command)
 
 elif args.command in ("haunt", "reset"):
-    client = boto3.client("lambda")
+    client = session.client("lambda")
     variables = client.get_function_configuration(FunctionName=application["FunctionName"])["Environment"]["Variables"]
     variables["TABLE_NAME"] = application["TableName"] + ("-missing" if args.command == "haunt" else "")
     client.update_function_configuration(FunctionName=application["FunctionName"], Environment={"Variables": variables})
@@ -45,9 +48,9 @@ elif args.command in ("haunt", "reset"):
 elif args.command == "status":
     monitoring = {
         item["OutputKey"]: item["OutputValue"]
-        for item in cloudformation.describe_stacks(StackName=os.environ["MONITORING_STACK"])["Stacks"][0]["Outputs"]
+        for item in cloudformation.describe_stacks(StackName=f"{args.prefix}-monitoring")["Stacks"][0]["Outputs"]
     }
-    alarm = boto3.client("cloudwatch").describe_alarms(AlarmNames=[monitoring["AlarmName"]])["MetricAlarms"][0]
+    alarm = session.client("cloudwatch").describe_alarms(AlarmNames=[monitoring["AlarmName"]])["MetricAlarms"][0]
     print(json.dumps({
         "alarm": alarm["AlarmName"],
         "state": alarm["StateValue"],
@@ -58,10 +61,10 @@ elif args.command == "status":
 else:
     agents = {
         item["OutputKey"]: item["OutputValue"]
-        for item in cloudformation.describe_stacks(StackName=os.environ["AGENT_STACK"])["Stacks"][0]["Outputs"]
+        for item in cloudformation.describe_stacks(StackName=f"{args.prefix}-agents")["Stacks"][0]["Outputs"]
     }
     if args.command == "memories":
-        client = boto3.client("bedrock-agentcore")
+        client = session.client("bedrock-agentcore")
         for category in ("episodes", "reflections"):
             response = client.retrieve_memory_records(
                 memoryId=agents["MemoryId"],
@@ -70,7 +73,7 @@ else:
             )
             print(json.dumps({"category": category, "records": response["memoryRecordSummaries"]}, default=str, indent=2))
     else:
-        client = boto3.client("bedrock-agentcore", config=Config(read_timeout=900, retries={"total_max_attempts": 1}))
+        client = session.client("bedrock-agentcore", config=Config(read_timeout=900, retries={"total_max_attempts": 1}))
         payload = {
             "incident_id": args.incident_id,
             "prompt": (

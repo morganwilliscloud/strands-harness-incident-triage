@@ -142,7 +142,7 @@ Demonstrate the simple run and export; explain the defaults without trying to fo
 
 - Walk through the Runtime entrypoint and background invocation.
 - Follow the returned report into `post_report_to_slack`.
-- Briefly explain the Slack token retrieval and on-call mention.
+- Show the JSON secret containing `bot_token`, `channel_id`, and `oncall_user_id`. The agent retrieves it when posting; deployment supplies only the secret ARN.
 
 Keep the screen on the actual agent and runbook. Build on the defaults explained in the previous segment rather than explaining them again.
 
@@ -252,6 +252,7 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 ## Presenter preparation and timing notes
 
 - Have the candy storefront, architecture diagram, code, three templates, CloudWatch views, and Slack channel ready to switch between.
+- Store Slack settings in Secrets Manager. Use the deployment script's profile/region arguments and `demo.py --profile PROFILE --region REGION` for the live commands; no `.env` file is required.
 - Rehearse the basic Harness CLI run and export. Have the resulting code/configuration and representative local session/memory files ready to show.
 - Deploy the sample application and monitoring before the show and start healthy traffic early enough to establish a baseline. Make those templates available with the sample; the on-air build focuses on the agent.
 - Confirm the deployment uploaded `storefront/index.html`, open the application stack's `StorefrontUrl`, and rehearse successful checkout → `haunt` → visible failure → `reset` → successful retry.

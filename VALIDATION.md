@@ -1,4 +1,14 @@
-# Validation — October 21, 2026
+# Validation
+
+## October 26, 2026 — Secrets Manager configuration
+
+- Four focused local checks passed: the Slack function reads the JSON secret and picks up changed destinations on the next report; a secret retrieval failure prevents posting; demo commands select an explicit AWS profile/region and discover stack outputs; the full deployment scripts resolve only secret metadata and pass the ARN without reading the token or requiring a `.env` file.
+- The Slack checks executed the actual function extracted from `agent.py` with mocked AWS and Slack clients. The demo command used mocked SDK clients, and deployment used stub AWS/packaging commands. No cloud deployment or real Slack delivery was performed.
+- All three CloudFormation templates passed `cfn-lint` using Python 3.12. All deployment/packaging scripts passed `bash -n`.
+- Slack settings now require a JSON secret containing `bot_token`, `channel_id`, and `oncall_user_id`. The template injects only its ARN, and the deployment script never retrieves the secret value.
+- The previous full Harness integration suite was not rerun. The existing deployment archive predates this change; `scripts/deploy.sh` builds a fresh archive before deployment.
+
+## October 21, 2026 — Previous local validation
 
 This record applies to the one-agent implementation using the pinned Harness 0.2.0 defaults, with the candy storefront added on October 21. Dependencies and agent code were not changed for the storefront revision.
 

@@ -34,7 +34,7 @@ The `create_harness()` call accepts the Harness defaults for built-in tools, ski
 
 The built-in shell executes in the Runtime environment. Code Interpreter is a separate execution environment; the agent must pass collected evidence to it rather than assuming it shares the Runtime's credentials or files.
 
-After the agent returns its report, `post_report_to_slack(incident_id, report)` retrieves the token from Secrets Manager and posts the report with the on-call mention. It is an ordinary function called by the application, not an agent tool.
+After the agent returns its report, `post_report_to_slack(incident_id, report)` retrieves the bot token, channel ID, and on-call user ID from one JSON secret in Secrets Manager and posts the report. It reads the secret on each notification, so destination changes take effect on the next report. It is an ordinary function called by the application, not an agent tool.
 
 The Runtime entrypoint supports background investigation, so intake can return after acceptance. `async with create_harness(...)` closes the agent and flushes pending memory work.
 
@@ -67,18 +67,29 @@ S3 snapshots preserve the current incident conversation and offloaded context. T
 
 Use Python 3.12, `uv`, and AWS CLI credentials for the chosen demo account. The example Region is `us-west-2`, where the AWS MCP endpoint is documented. Select a Bedrock model/inference profile available to your account.
 
-Prepare a Slack app with `chat:write`, invite it to the channel, and record the channel ID and on-call user ID. Store its bot token as a plain Secrets Manager `SecretString`. The policy assumes the default Secrets Manager encryption key.
+Prepare a Slack app with `chat:write` and invite it to the demo channel. In Secrets Manager, choose **Other type of secret** and create a secret named `haunted-oncall/slack` with these three key/value pairs:
 
-Copy `.env.example` to `.env` and fill in the values. The included profile and Region are examples. No GitHub settings are needed.
+```json
+{
+  "bot_token": "REPLACE_WITH_SLACK_BOT_TOKEN",
+  "channel_id": "C_REPLACE",
+  "oncall_user_id": "U_REPLACE"
+}
+```
+
+Enter the actual values in Secrets Manager, not in a local file. Use the default `aws/secretsmanager` encryption key and the same account and region as the agent. The agent expects this JSON object rather than the earlier token-only secret format.
+
+No `.env` file is needed. Pass your existing AWS CLI profile, region, model ID, and secret name to deployment:
 
 ```bash
 uv venv --python 3.12
 uv pip install --python .venv/bin/python -r requirements.txt
-set -a
-source .env
-set +a
-bash scripts/deploy.sh
+bash scripts/deploy.sh DEMO_PROFILE us-west-2 MODEL_ID haunted-oncall/slack
 ```
+
+Replace `DEMO_PROFILE` and `MODEL_ID` with your chosen values. An optional fifth argument changes the resource prefix from `haunted`; the stack names are `<prefix>-app`, `<prefix>-monitoring`, and `<prefix>-agents`.
+
+Deployment resolves the secret ARN with `DescribeSecret` without reading its contents. CloudFormation injects the ARN and generated resource IDs into the hosted runtime's environment; the Slack values stay in Secrets Manager. The agent role can read that specific secret.
 
 The deployment script creates the application stack, uploads `storefront/index.html` to its private artifact bucket, creates monitoring, builds a Linux ARM64 archive, deploys the agent stack, and connects the alarm to intake. It prints the storefront URL at the end. The archive contains `agent.py`, the skill, AWS CLI, and Python dependencies. It uses AgentCore direct code deployment without a Docker build. The packaged CLI launcher is made portable so it does not point at the presenter's local Python installation.
 
@@ -92,24 +103,26 @@ The sample API is public and throttled. Use the demo account and remove it after
 
 ### Deploy just the storefront and alarm
 
-To exercise real checkout failures and CloudWatch before configuring the agent and Slack, set `AWS_PROFILE`, `AWS_REGION`, `AWS_DEFAULT_REGION`, `APPLICATION_STACK`, and `MONITORING_STACK`, then run:
+To exercise real checkout failures and CloudWatch before configuring the agent and Slack, pass the profile and region directly:
 
 ```bash
-bash scripts/deploy-app.sh
+bash scripts/deploy-app.sh DEMO_PROFILE us-west-2
 ```
 
-This creates the application and monitoring stacks, uploads the storefront, and prints its live URL. A new monitoring stack has no agent target until the full deployment connects it. Use the commands below to start traffic, introduce the failure, check the alarm, and recover. Run the full `scripts/deploy.sh` when the model and Slack settings are ready.
+This creates the application and monitoring stacks, uploads the storefront, and prints its live URL. An optional third argument sets a different resource prefix. A new monitoring stack has no agent target until the full deployment connects it. Use the commands below to start traffic, introduce the failure, check the alarm, and recover. Run the full deployment command above when the model and Slack secret are ready.
 
 ## Run the demo
 
 The storefront is a single HTML file with inline CSS, JavaScript, and SVG artwork. `GET /` serves the page through a separate Lambda that can read only `storefront/index.html` in the private artifact bucket. The browser posts orders to `POST /checkout` on the same API. Page views do not invoke checkout or change its alarm metrics. There are no browser AWS credentials or fault-injection endpoints.
 
+The demo commands use `--profile` and `--region` and look up resource IDs from CloudFormation. If you deployed with a different prefix, also pass `--prefix YOUR_PREFIX` before the command. The examples below use the default `haunted` prefix.
+
 Start healthy traffic and let at least three minutes accumulate, then open the URL:
 
 ```bash
-.venv/bin/python demo.py start-traffic
-.venv/bin/python demo.py status
-aws cloudformation describe-stacks --stack-name "$APPLICATION_STACK" \
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 start-traffic
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 status
+aws --profile DEMO_PROFILE --region us-west-2 cloudformation describe-stacks --stack-name haunted-app \
   --query "Stacks[0].Outputs[?OutputKey=='StorefrontUrl'].OutputValue | [0]" --output text
 ```
 
@@ -118,7 +131,7 @@ Choose a quantity and click **Place demo order**. Show the successful order conf
 Inject the failure from the presenter's terminal:
 
 ```bash
-.venv/bin/python demo.py haunt
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 haunt
 ```
 
 This changes `TABLE_NAME` to a nonexistent table. Click **Place another demo order** in the storefront. Checkout fails and the page shows **Something's haunting checkout**, keeping the selected quantity ready for a retry.
@@ -130,20 +143,20 @@ Watch the Runtime logs for the incident ID, skill activation, generated commands
 Resume that incident without another Slack notification:
 
 ```bash
-.venv/bin/python demo.py ask INCIDENT_UUID "Which evidence supports the suspected cause?"
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 ask INCIDENT_UUID "Which evidence supports the suspected cause?"
 ```
 
 Restore the application, click **Try checkout again** to show a successful order, and observe alarm recovery:
 
 ```bash
-.venv/bin/python demo.py reset
-.venv/bin/python demo.py status
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 reset
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 status
 ```
 
 After actually observing recovery, record the engineer's confirmation:
 
 ```bash
-.venv/bin/python demo.py resolve INCIDENT_UUID \
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 resolve INCIDENT_UUID \
   "Restored the correct TABLE_NAME. Subsequent requests succeeded and the alarm returned to OK."
 ```
 
@@ -152,7 +165,7 @@ This adds the supplied outcome to the incident conversation for memory extractio
 Check extracted memories:
 
 ```bash
-.venv/bin/python demo.py memories "Checkout ResourceNotFoundException table configuration"
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 memories "Checkout ResourceNotFoundException table configuration"
 ```
 
 Wait for an actual record, then trigger another failure after the alarm returns to `OK`. The new session can recall the earlier lesson and test it against fresh evidence. Prepare the earlier incident during rehearsal so the stream does not depend on extraction timing.
@@ -160,8 +173,8 @@ Wait for an actual record, then trigger another failure after the alarm returns 
 Finish with:
 
 ```bash
-.venv/bin/python demo.py reset
-.venv/bin/python demo.py stop-traffic
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 reset
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 stop-traffic
 ```
 
 ## One-hour walkthrough
