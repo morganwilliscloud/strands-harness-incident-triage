@@ -275,6 +275,7 @@ Resources:
               response = runtime.invoke_agent_runtime(
                   agentRuntimeArn=os.environ["AGENT_ARN"],
                   runtimeSessionId=f"incident-{event['id']}",
+                  contentType="application/json",
                   payload=json.dumps({
                       "incident_id": event["id"],
                       "prompt": f"Investigate this CloudWatch alarm and report your findings: {json.dumps(event)}",

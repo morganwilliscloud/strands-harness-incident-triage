@@ -88,6 +88,7 @@ else:
         response = client.invoke_agent_runtime(
             agentRuntimeArn=agents["RuntimeArn"],
             runtimeSessionId=f"incident-{args.incident_id}",
+            contentType="application/json",
             payload=json.dumps(payload).encode(),
         )
         print(response["response"].read().decode())

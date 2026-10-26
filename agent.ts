@@ -19,7 +19,7 @@ const env = process.env
 const region = env.AWS_REGION!
 const secrets = new SecretsManagerClient({ region })
 const requestSchema = z.object({
-  incident_id: z.string().uuid(),
+  incident_id: z.string().guid(),
   prompt: z.string(),
   background: z.boolean().default(false),
   notify: z.boolean().default(true),
@@ -84,6 +84,7 @@ async function investigate(incident: Incident) {
         `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
         `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
         `Expected DynamoDB table: ${env.APP_TABLE}. Stack: ${env.APP_STACK}.`,
+        `Host runbook directory: ${process.cwd()}/.agent/skills/checkout-investigation. Use read with absolute paths there; Code Interpreter has a separate filesystem.`,
         'Load checkout-investigation before working. Use AWS Toolkit to collect AWS evidence.',
         'Run generated analysis code and shell commands in Code Interpreter. Return Slack mrkdwn.',
       ].join(' '),

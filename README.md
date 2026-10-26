@@ -35,7 +35,7 @@ Code Interpreter receives the collected evidence for further analysis. Its files
 
 `postReportToSlack()` reads `bot_token`, `channel_id`, and `oncall_user_id` from one Secrets Manager JSON secret on each notification. It checks Slack's application-level `ok` result before reporting success. The model cannot choose the channel or access a Slack-posting tool.
 
-`await using` shuts down Harness and flushes pending memory work at scope exit. `SessionManager` with unified `S3Storage` preserves the incident across follow-ups. `AgentCoreMemoryStore` uses a stable service actor across incidents and a different session ID for each alarm. Server-side episode extraction is asynchronous; flushing events does not mean a searchable lesson exists yet.
+`await using` shuts down Harness and flushes pending memory work at scope exit. `SessionManager` with unified `S3Storage` preserves the incident across follow-ups. `AgentCoreMemoryStore` uses a stable service actor across incidents and a different session ID for each alarm. AgentCore generates episodic records after detecting a completed episode. Extraction is asynchronous; flushing events does not mean a searchable lesson exists yet.
 
 ## Permissions and execution boundaries
 
