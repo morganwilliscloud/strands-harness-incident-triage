@@ -58,7 +58,7 @@ async function investigate(incident: Incident) {
   try {
     await interpreter.startSession(incidentId)
     await using agent = await createHarness({
-      model: env.MODEL_ID!,
+      model: 'bedrock/us.anthropic.claude-sonnet-5-5',
       name: 'haunted-investigator',
       traceAttributes: { 'session.id': incidentId, 'incident.id': incidentId },
       instructions: [
