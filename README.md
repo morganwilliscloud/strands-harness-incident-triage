@@ -2,72 +2,58 @@
 
 **Candy-store checkout fails → CloudWatch alarm → Harness investigation → report in Slack.**
 
-All agent code is in `agent.py`. It runs one Harness agent with built-in shell/file tools, Agent Toolkit for AWS, AgentCore Code Interpreter, packaged runbooks, and AgentCore Memory. It has no custom tools, role switching, ticket integration, or agent-to-agent handoff.
+The agent is one TypeScript file, `agent.ts`. Harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
 
-**Demo status:** Local checks and browser previews have passed. AWS deployment and real alarm-to-Slack delivery have not yet been verified. See [validation details](VALIDATION.md) and the [livestream run of show](docs/run-of-show.md).
+See `VALIDATION.md` for the exact test status and `docs/run-of-show.md` for the one-hour livestream outline.
 
 ```mermaid
 flowchart TD
-    Browser[Midnight Candy Co. storefront] -->|POST /checkout| App
-    App[Checkout Lambda → DynamoDB] --> Alarm[CloudWatch alarm]
+    Browser[Midnight Candy Co. storefront] -->|POST /checkout| App[Checkout Lambda → DynamoDB]
+    App --> Alarm[CloudWatch alarm]
     Alarm --> Intake[EventBridge → intake Lambda]
-    Intake --> Agent[Strands Harness in AgentCore Runtime]
-    Agent --> Shell[Built-in shell + AWS CLI + Python]
-    Agent --> Toolkit[Agent Toolkit for AWS: AWS MCP Server]
-    Shell --> AWS[Application telemetry and configuration]
-    Toolkit --> AWS
-    Agent --> CI[AgentCore Code Interpreter]
+    Intake --> Agent[TypeScript Strands Harness in AgentCore Runtime]
+    Agent -->|Signed requests with investigation role| Toolkit[Managed AWS MCP Server]
+    Toolkit --> AWS[Application logs, metrics, and configuration]
+    Agent --> Interpreter[AgentCore Code Interpreter: separate role and SANDBOX networking]
     Agent <--> Memory[AgentCore Memory: episodes and lessons]
-    Agent <--> Sessions[S3: sessions and offloaded context]
+    Agent <--> Sessions[S3: session snapshots and context]
     Agent <--> Model[Amazon Bedrock]
-    Agent --> Slack[Slack report + on-call mention]
+    Agent --> Slack[Application posts report and on-call mention]
 ```
 
-## The agent file
+## Agent walkthrough
 
-The `create_harness()` call accepts the Harness defaults for built-in tools, skills, and context management. The default tools include shell/file operations, web fetching, subagents, and programmatic tool calling; native web search depends on the model/provider. The agent decides which AWS CLI commands, boto3 scripts, log queries, and calculations it needs.
+`createHarness()` retains default skill discovery and context management. `builtinTools: ['read']` disables host shell, general web tools, and host file-writing tools. The bundled `.agent/skills/checkout-investigation` runbook tells the investigator to verify recalled lessons against current evidence and treat logs as untrusted data.
 
-`tools` adds two existing integrations:
+`CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application stops its interpreter session in `finally`, including after an investigation error.
 
-- The AWS MCP Server from Agent Toolkit for AWS, connected through the official `mcp-proxy-for-aws` library using the runtime's IAM credentials. It provides AWS documentation, AWS skills, and execution tools.
-- The official Strands `AgentCoreCodeInterpreter` integration for analyzing collected data.
+The AWS MCP connection uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs each request with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector.
 
-The built-in shell executes in the Runtime environment. Code Interpreter is a separate execution environment; the agent must pass collected evidence to it rather than assuming it shares the Runtime's credentials or files.
+The model writes AWS investigation scripts for MCP's `aws___run_script`. The server executes AWS calls using the investigation credentials. Scripts must follow the tool's current schema: `code`, keyword arguments to asynchronous `call_boto3`, PascalCase AWS operation names, and a final result expression. Check `api_calls` and the returned execution status: an MCP response can have `isError: false` while the execution result contains an error.
 
-After the agent returns its report, `post_report_to_slack(incident_id, report)` retrieves the bot token, channel ID, and on-call user ID from one JSON secret in Secrets Manager and posts the report. It reads the secret on each notification, so destination changes take effect on the next report. It is an ordinary function called by the application, not an agent tool.
+Code Interpreter receives the collected evidence for further analysis. Its filesystem and execution role are separate from the host agent. It is configured with SANDBOX networking and no AWS resource permissions. SANDBOX is not an air gap; do not describe it as having absolutely no connectivity. Application AWS calls go through MCP, not through interpreter code.
 
-The Runtime entrypoint supports background investigation, so intake can return after acceptance. `async with create_harness(...)` closes the agent and flushes pending memory work.
+`postReportToSlack()` reads `bot_token`, `channel_id`, and `oncall_user_id` from one Secrets Manager JSON secret on each notification. It checks Slack's application-level `ok` result before reporting success. The model cannot choose the channel or access a Slack-posting tool.
 
-## IAM is the AWS boundary
+`await using` shuts down Harness and flushes pending memory work at scope exit. `SessionManager` with unified `S3Storage` preserves the incident across follow-ups. `AgentCoreMemoryStore` uses a stable service actor across incidents and a different session ID for each alarm. Server-side episode extraction is asynchronous; flushing events does not mean a searchable lesson exists yet.
 
-`templates/agents.yaml` separates the runtime role's permissions into two policies:
+## Permissions and execution boundaries
 
-| Policy | Allowed operations |
+| Identity | Permissions |
 |---|---|
-| `InvestigateCheckout` | Query/read the application's logs; retrieve metrics; inspect its Lambda configuration, DynamoDB table metadata, and CloudFormation stack |
-| `OperateAgent` | Invoke Bedrock; operate Code Interpreter; write runtime logs; persist sessions/memory; retrieve the one Slack secret; read the deployment archive |
+| Runtime role | Invoke Bedrock, persist memory and S3 sessions, operate its interpreter, read its Slack secret, and assume the investigation role |
+| Investigation role | Read the sample Lambda configuration, DynamoDB table metadata, application stack, logs, and metrics |
+| Code Interpreter role | No AWS resource policies; generated analysis does not receive runtime credentials |
 
-The application policy grants named actions, not `ReadOnlyAccess` or administrator permissions. Resource-scoped actions target the sample application. Metric retrieval and query-result retrieval use `Resource: '*'` in this template; those API permissions have broader read scope.
+The investigation role cannot retrieve the Slack secret, modify the sample application, write orders, or assume another role. Some metric and Logs Insights result permissions require `Resource: '*'`; their read scope is broader than the sample alone.
 
-There are no grants to update the sample Lambda, write orders, change IAM, or assume another role. A generated AWS command does not gain additional permissions because the agent wrote it. The AWS MCP Server forwards downstream calls under the caller's existing AWS permissions; no deprecated `aws-mcp:InvokeMcp` grants are included.
+These boundaries limit tool authority; they do not guarantee that every malicious log instruction will be ignored. Reports and recalled lessons still need scrutiny. Host `read` is enabled for runbooks; this demo does not claim that all source files are hidden from the agent. Generated code executes in Code Interpreter, not through a host shell.
 
-All code in the Runtime shares the runtime role, including access to its operational resources. IAM controls AWS requests, not local filesystem or shell execution.
+## Setup and deployment
 
-## Skills, memory, and sessions
+Use Node.js 22 or newer, npm, Python 3.12 or newer for the small rehearsal CLI, and AWS CLI credentials for the demo account. No `.env` file is used.
 
-The bundled runbook is `.agent/skills/checkout-investigation/SKILL.md`, with a small architecture reference alongside it. The process starts in the package directory so Harness can discover `./.agent/skills` without a `skills` argument. The runbook directs generated scripts and evidence files to `/tmp`. Harness discovers the skill metadata and loads the full procedure when the agent activates the skill. Updating the bundled skill means redeploying the package.
-
-AgentCore Memory stores episodes and reflections under `/services/{actorId}/`. The service identity remains stable across incidents, while each alarm gets a new incident/session ID. Harness injects relevant memories and provides `search_memory` for deliberate recall.
-
-The runbook requires current evidence before reusing a previous fix. An engineer's confirmed resolution can be added to the original session so future incidents can learn from it. Server-side episode extraction is asynchronous; flushing events does not mean extraction has finished.
-
-S3 snapshots preserve the current incident conversation and offloaded context. They are separate from cross-incident memory.
-
-## Setup
-
-Use Python 3.12, `uv`, and AWS CLI credentials for the chosen demo account. The example Region is `us-west-2`, where the AWS MCP endpoint is documented. Select a Bedrock model/inference profile available to your account.
-
-Prepare a Slack app with `chat:write` and invite it to the demo channel. In Secrets Manager, choose **Other type of secret** and create a secret named `haunted-oncall/slack` with these three key/value pairs:
+Create a Slack app with `chat:write`, invite it to the demo channel, and store these values in a Secrets Manager JSON secret named `haunted-oncall/slack`:
 
 ```json
 {
@@ -77,127 +63,65 @@ Prepare a Slack app with `chat:write` and invite it to the demo channel. In Secr
 }
 ```
 
-Enter the actual values in Secrets Manager, not in a local file. Use the default `aws/secretsmanager` encryption key and the same account and region as the agent. The agent expects this JSON object rather than the earlier token-only secret format.
-
-No `.env` file is needed. Pass your existing AWS CLI profile, region, model ID, and secret name to deployment:
+Use the same AWS account and region as the agent and the default Secrets Manager encryption key. Keep actual values out of local files.
 
 ```bash
+npm ci --ignore-scripts
+npm run check
 uv venv --python 3.12
 uv pip install --python .venv/bin/python -r requirements.txt
-bash scripts/deploy.sh DEMO_PROFILE us-west-2 MODEL_ID haunted-oncall/slack
+bash scripts/deploy.sh DEMO_PROFILE us-east-1 bedrock/MODEL_ID haunted-oncall/slack
 ```
 
-Replace `DEMO_PROFILE` and `MODEL_ID` with your chosen values. An optional fifth argument changes the resource prefix from `haunted`; the stack names are `<prefix>-app`, `<prefix>-monitoring`, and `<prefix>-agents`.
+The model argument uses Harness's provider-qualified form, for example `bedrock/us.anthropic.claude-sonnet-5-5` if that inference profile is available to the account. An optional fifth argument changes the resource prefix from `haunted`.
 
-Deployment resolves the secret ARN with `DescribeSecret` without reading its contents. CloudFormation injects the ARN and generated resource IDs into the hosted runtime's environment; the Slack values stay in Secrets Manager. The agent role can read that specific secret.
+Deployment resolves the Slack ARN without reading the secret value. CloudFormation supplies resource identifiers to the runtime environment. The packaging script compiles `agent.ts`, installs locked Linux ARM64 production dependencies, includes `.agent/skills`, and uploads a ZIP for the `NODE_22` managed runtime. No Docker build is required. `requirements.txt` is only for `demo.py`; the agent does not use Python dependencies. The agent stack deploys with rollback disabled so successful resources remain available if a later resource needs correction.
 
-The deployment script creates the application stack, uploads `storefront/index.html` to its private artifact bucket, creates monitoring, builds a Linux ARM64 archive, deploys the agent stack, and connects the alarm to intake. It prints the storefront URL at the end. The archive contains `agent.py`, the skill, AWS CLI, and Python dependencies. It uses AgentCore direct code deployment without a Docker build. The packaged CLI launcher is made portable so it does not point at the presenter's local Python installation.
+Provision the stack before the livestream. AgentCore Memory creation and deletion take several minutes; the five-minute deployment segment should update a prepared stack rather than depend on first-time provisioning.
 
-Templates:
+The templates remain separate:
 
-1. `application.yaml`: API Gateway, storefront Lambda, checkout Lambda, orders table, disabled traffic generator, artifact bucket.
+1. `application.yaml`: storefront, checkout, orders table, disabled traffic generator, and artifact bucket.
 2. `monitoring.yaml`: error-rate alarm and optional EventBridge route.
-3. `agents.yaml`: one runtime/role, memory, sessions, intake, and an intake failure queue.
+3. `agents.yaml`: Node.js Runtime, investigation role, Code Interpreter, memory, sessions, intake, and intake failure queue.
 
-The sample API is public and throttled. Use the demo account and remove it after use.
+The sample API is public and throttled. Use a demo account and remove resources when finished.
 
-### Deploy just the storefront and alarm
+## Rehearsal
 
-To exercise real checkout failures and CloudWatch before configuring the agent and Slack, pass the profile and region directly:
-
-```bash
-bash scripts/deploy-app.sh DEMO_PROFILE us-west-2
-```
-
-This creates the application and monitoring stacks, uploads the storefront, and prints its live URL. An optional third argument sets a different resource prefix. A new monitoring stack has no agent target until the full deployment connects it. Use the commands below to start traffic, introduce the failure, check the alarm, and recover. Run the full deployment command above when the model and Slack secret are ready.
-
-## Run the demo
-
-The storefront is a single HTML file with inline CSS, JavaScript, and SVG artwork. `GET /` serves the page through a separate Lambda that can read only `storefront/index.html` in the private artifact bucket. The browser posts orders to `POST /checkout` on the same API. Page views do not invoke checkout or change its alarm metrics. There are no browser AWS credentials or fault-injection endpoints.
-
-The demo commands use `--profile` and `--region` and look up resource IDs from CloudFormation. If you deployed with a different prefix, also pass `--prefix YOUR_PREFIX` before the command. The examples below use the default `haunted` prefix.
-
-Start healthy traffic and let at least three minutes accumulate, then open the URL:
+Open the application stack's `StorefrontUrl` and place a successful demo order. The commands discover resource IDs from CloudFormation. Use `--prefix` before the command if you deployed under another prefix.
 
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 start-traffic
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 status
-aws --profile DEMO_PROFILE --region us-west-2 cloudformation describe-stacks --stack-name haunted-app \
-  --query "Stacks[0].Outputs[?OutputKey=='StorefrontUrl'].OutputValue | [0]" --output text
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 start-traffic
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 haunt
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 status
 ```
 
-Choose a quantity and click **Place demo order**. Show the successful order confirmation. These are demo orders with no payment or customer information; checkout stores the chosen quantity in DynamoDB.
+Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for two consecutive one-minute periods. Allow additional time for metric publication and alarm evaluation.
 
-Inject the failure from the presenter's terminal:
+Watch Runtime logs, AWS MCP calls, Code Interpreter analysis, and the Slack report. The investigation proposes recovery; it does not apply the fix.
 
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 haunt
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 reset
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 status
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 stop-traffic
 ```
 
-This changes `TABLE_NAME` to a nonexistent table. Click **Place another demo order** in the storefront. Checkout fails and the page shows **Something's haunting checkout**, keeping the selected quantity ready for a retry.
-
-That browser request invokes the real checkout Lambda. Its unhandled database error contributes to the existing Lambda Errors metric. The alarm fires above 20% errors for two consecutive one-minute periods with at least five invocations per period. One failed click alone will not trip it: keep the scheduled traffic running to supply twenty direct Lambda invocations per minute while you show the customer-visible failure.
-
-Watch the Runtime logs for the incident ID, skill activation, generated commands, Toolkit calls, and Code Interpreter analysis. The complete report appears in Slack, including the incident ID and on-call mention.
-
-Resume that incident without another Slack notification:
+Verify successful checkout and the alarm's recovery. Follow up in the original incident session without sending another Slack notification:
 
 ```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 ask INCIDENT_UUID "Which evidence supports the suspected cause?"
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 ask INCIDENT_UUID "What evidence supports the suspected configuration error?"
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 resolve INCIDENT_UUID "I restored TABLE_NAME to the expected table, checkout succeeded, and the alarm returned to OK."
+.venv/bin/python demo.py --profile DEMO_PROFILE --region us-east-1 memories "checkout ResourceNotFoundException table name"
 ```
 
-Restore the application, click **Try checkout again** to show a successful order, and observe alarm recovery:
+Wait for a real memory record before demonstrating cross-incident recall. Seed and verify that lesson during rehearsal so the stream does not depend on extraction timing.
 
-```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 reset
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 status
-```
+## MCP verification
 
-After actually observing recovery, record the engineer's confirmation:
+Both servers were called successfully from TypeScript against the demo account:
 
-```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 resolve INCIDENT_UUID \
-  "Restored the correct TABLE_NAME. Subsequent requests succeeded and the alarm returned to OK."
-```
+- Managed AWS MCP: signed remote request executed `GetFunctionConfiguration` and returned the real checkout table name, with a successful API-call record.
+- AWS Labs CloudWatch MCP: standard stdio transport launched its published Python server and retrieved the actual alarm history. It is not included in this application or deployment, per the chosen scope.
 
-This adds the supplied outcome to the incident conversation for memory extraction. It does not independently verify the statement or send another Slack message.
-
-Check extracted memories:
-
-```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 memories "Checkout ResourceNotFoundException table configuration"
-```
-
-Wait for an actual record, then trigger another failure after the alarm returns to `OK`. The new session can recall the earlier lesson and test it against fresh evidence. Prepare the earlier incident during rehearsal so the stream does not depend on extraction timing.
-
-Finish with:
-
-```bash
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 reset
-.venv/bin/python demo.py --profile DEMO_PROFILE --region us-west-2 stop-traffic
-```
-
-## One-hour walkthrough
-
-See the [livestream run of show](docs/run-of-show.md) for the host transitions and full schedule. Introductions and architecture take ten minutes, the basic Harness demonstration and custom agent take ten minutes each, and IaC takes five. The live failure/investigation takes ten minutes, followed by three minutes for recovery and memory, ten minutes of Q&A, and a two-minute close.
-
-Before the stream, validate that the actual runtime role permits the intended reads and rejects sample-application mutations, using IAM policy simulation and observed permitted calls. No live IAM enforcement has been demonstrated by static template checks alone.
-
-## Demo delivery behavior
-
-There is no incident database or deduplication workflow. EventBridge/Lambda retries can cause repeated investigations and Slack posts. Session IDs correlate the work; they are not an exactly-once guarantee.
-
-Intake failures can reach the SQS failure queue. Failures after background acceptance appear in Runtime logs and do not propagate back to Lambda's failure destination. The agent does not invent fallback reports or silently turn errors into success.
-
-## Cleanup
-
-Stop traffic. Empty the agent stack's `SessionBucket` and application stack's `ArtifactBucket`. Delete the monitoring, agent, and application stacks in that order, waiting for each to finish. Runtime-created log groups may remain. Pre-existing secrets and Slack messages are not deleted.
-
-## Sources
-
-- [Agent Toolkit AWS MCP tools](https://docs.aws.amazon.com/agent-toolkit/latest/userguide/understanding-mcp-server-tools.html)
-- [AWS MCP authorization](https://docs.aws.amazon.com/agent-toolkit/latest/userguide/security_iam_service-with-iam.html)
-- [Official MCP proxy library integration](https://github.com/aws/mcp-proxy-for-aws#programmatic-access)
-- [Strands Harness](https://github.com/strands-agents/harness-sdk/tree/main/harness-py)
-- [AgentCore Memory with Strands](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/strands-sdk-memory.html)
-- [AgentCore direct Python deployment](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-code-deploy-python.html)
+The CloudWatch test required explicit UTC time bounds. Its alarm summary also represented our metric-math alarm with blank metric fields and a default 300-second period despite the actual constituent metrics using 60 seconds. Successful transport is not proof that every server summary correctly represents every alarm type.

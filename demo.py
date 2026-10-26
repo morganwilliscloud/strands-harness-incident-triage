@@ -65,10 +65,13 @@ else:
     }
     if args.command == "memories":
         client = session.client("bedrock-agentcore")
-        for category in ("episodes", "reflections"):
+        for category, namespace in (
+            ("episodes", f"/services/{agents['ServiceId']}/episodes/"),
+            ("service_memory", f"/services/{agents['ServiceId']}/"),
+        ):
             response = client.retrieve_memory_records(
                 memoryId=agents["MemoryId"],
-                namespace=f"/services/{agents['ServiceId']}/{category}/",
+                namespace=namespace,
                 searchCriteria={"searchQuery": args.query, "topK": 5},
             )
             print(json.dumps({"category": category, "records": response["memoryRecordSummaries"]}, default=str, indent=2))

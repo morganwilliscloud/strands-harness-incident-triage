@@ -1,0 +1,31 @@
+{
+  "name": "haunted-oncall",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "esbuild agent.ts --platform=node --target=node22 --format=esm --packages=external --outfile=dist/agent.js"
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-js": "5.2.0",
+    "@aws-sdk/client-s3": "3.1132.0",
+    "@aws-sdk/client-secrets-manager": "3.1132.0",
+    "@aws-sdk/credential-providers": "3.1132.0",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@smithy/protocol-http": "5.3.5",
+    "@smithy/signature-v4": "5.3.5",
+    "@strands-agents/harness": "0.3.1",
+    "@strands-agents/sdk": "1.22.0",
+    "bedrock-agentcore": "0.4.6",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.13",
+    "typescript": "^5.9.3"
+  }
+}

@@ -16,6 +16,23 @@ Parameters:
     Type: String
     Description: ARN of the JSON secret containing bot_token, channel_id, and oncall_user_id.
 Resources:
+  InterpreterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+  Interpreter:
+    Type: AWS::BedrockAgentCore::CodeInterpreterCustom
+    Properties:
+      Name: !Sub ${NamePrefix}_analysis
+      ExecutionRoleArn: !GetAtt InterpreterRole.Arn
+      NetworkConfiguration:
+        NetworkMode: SANDBOX
   Sessions:
     Type: AWS::S3::Bucket
     Properties:
@@ -40,7 +57,7 @@ Resources:
               - /services/{actorId}/episodes/
             ReflectionConfiguration:
               Namespaces:
-                - /services/{actorId}/reflections/
+                - /services/{actorId}/
   AgentRole:
     Type: AWS::IAM::Role
     Properties:
@@ -52,44 +69,6 @@ Resources:
               Service: bedrock-agentcore.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: InvestigateCheckout
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:StartQuery
-                  - logs:FilterLogEvents
-                  - logs:GetLogEvents
-                  - logs:DescribeLogStreams
-                Resource:
-                  Fn::Sub:
-                    - arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${Group}:*
-                    - Group:
-                        Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
-              - Effect: Allow
-                Action:
-                  - logs:GetQueryResults
-                  - cloudwatch:GetMetricData
-                  - cloudwatch:GetMetricStatistics
-                Resource: '*'
-              - Effect: Allow
-                Action: lambda:GetFunctionConfiguration
-                Resource:
-                  Fn::ImportValue: !Sub ${ApplicationStack}-FunctionArn
-              - Effect: Allow
-                Action: dynamodb:DescribeTable
-                Resource:
-                  Fn::Sub:
-                    - arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}
-                    - Table:
-                        Fn::ImportValue: !Sub ${ApplicationStack}-TableName
-              - Effect: Allow
-                Action:
-                  - cloudformation:DescribeStacks
-                  - cloudformation:DescribeStackResources
-                  - cloudformation:ListStackResources
-                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationStack}/*
         - PolicyName: OperateAgent
           PolicyDocument:
             Version: '2012-10-17'
@@ -144,8 +123,69 @@ Resources:
                   - bedrock-agentcore:InvokeCodeInterpreter
                   - bedrock-agentcore:StopCodeInterpreterSession
                   - bedrock-agentcore:GetCodeInterpreterSession
-                Resource: !Sub arn:${AWS::Partition}:bedrock-agentcore:${AWS::Region}:aws:code-interpreter/aws.codeinterpreter.v1
+                Resource: !GetAtt Interpreter.CodeInterpreterArn
+  InvestigationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt AgentRole.Arn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvestigateCheckout
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:StartQuery
+                  - logs:FilterLogEvents
+                  - logs:GetLogEvents
+                  - logs:DescribeLogStreams
+                Resource:
+                  Fn::Sub:
+                    - arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${Group}:*
+                    - Group:
+                        Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
+              - Effect: Allow
+                Action:
+                  - logs:GetQueryResults
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:GetMetricStatistics
+                Resource: '*'
+              - Effect: Allow
+                Action: lambda:GetFunctionConfiguration
+                Resource:
+                  Fn::ImportValue: !Sub ${ApplicationStack}-FunctionArn
+              - Effect: Allow
+                Action: dynamodb:DescribeTable
+                Resource:
+                  Fn::Sub:
+                    - arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}
+                    - Table:
+                        Fn::ImportValue: !Sub ${ApplicationStack}-TableName
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:ListStackResources
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationStack}/*
+  AssumeInvestigationRole:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AssumeInvestigationRole
+      Roles: [!Ref AgentRole]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !GetAtt InvestigationRole.Arn
   Investigator:
+    DependsOn: AssumeInvestigationRole
     Type: AWS::BedrockAgentCore::Runtime
     Properties:
       AgentRuntimeName: !Sub ${NamePrefix}_investigator
@@ -158,8 +198,8 @@ Resources:
         MaxLifetime: 1800
       AgentRuntimeArtifact:
         CodeConfiguration:
-          Runtime: PYTHON_3_12
-          EntryPoint: [agent.py]
+          Runtime: NODE_22
+          EntryPoint: [agent.js]
           Code:
             S3:
               Bucket:
@@ -169,6 +209,8 @@ Resources:
         AWS_REGION: !Ref AWS::Region
         AWS_DEFAULT_REGION: !Ref AWS::Region
         MODEL_ID: !Ref ModelId
+        CODE_INTERPRETER_ID: !GetAtt Interpreter.CodeInterpreterId
+        INVESTIGATION_ROLE_ARN: !GetAtt InvestigationRole.Arn
         MEMORY_ID: !GetAtt Memory.MemoryId
         SERVICE_ID: !Sub ${NamePrefix}_checkout
         SESSION_BUCKET: !Ref Sessions

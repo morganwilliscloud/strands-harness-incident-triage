@@ -1,5 +1,31 @@
 # Validation
 
+## October 26, 2026 — TypeScript migration
+
+- Agent implementation moved to one `agent.ts`, using published Harness 0.3.1, Strands SDK 1.22.0, and AgentCore SDK 0.4.6. Code Interpreter uses the SDK's experimental Strands integration. No legacy Strands tools package is installed or deployed.
+- Type checking and compilation passed. The local Runtime server returned a healthy `/ping` response.
+- A signed AWS MCP call from TypeScript executed `GetFunctionConfiguration` against the real sample Lambda. The result returned its actual table name and a successful `api_calls` entry. Merely listing MCP tools was not treated as an execution test.
+- A TypeScript stdio MCP client launched the published CloudWatch MCP server and retrieved the real alarm's state history with explicit UTC bounds. This verified interoperability, but CloudWatch MCP is excluded from the application and deployment at the user's request.
+- CloudWatch MCP's summary of this metric-math alarm showed blank metric fields and a default 300-second period rather than the real constituent metric periods of 60 seconds. That server summary is not a faithful replacement for the raw alarm configuration.
+- All three AgentCore Code Interpreter tools ran against a newly provisioned SANDBOX interpreter: Python returned 42; a file operation wrote an evidence JSON file; a shell command read it with Python and calculated a 100% example error rate. The Python check could not see `/var/task/agent.js`. These tool tests used locally authenticated SDK clients and real remote execution, not hosted agent execution.
+- Production dependency audit initially found two high-severity advisories. Updating the MCP client to 2.4.0 and Zod to 4.6.7 resolved them; npm subsequently reported zero known vulnerabilities. No dependency constraint overrides were used.
+- The Node.js deployment archive contains compiled JavaScript, the packaged skill, locked dependencies, and the Linux ARM64 Monty binary. It is approximately 50 MiB zipped and 142 MiB uncompressed, with no Python agent.
+- Hosted Runtime execution, session resumption, long-term memory extraction, and full alarm-to-Slack delivery are not yet verified for this TypeScript revision.
+
+The entries below describe earlier revisions.
+
+## October 26, 2026 — Live setup and vended-tool correction
+
+- Real AWS app and monitoring stacks deployed in us-east-1. A real checkout POST returned an order ID; CloudWatch recorded checkout traffic.
+- Slack auth.test and chat.postMessage both returned ok=true for a clearly labeled setup-test message. This was not an agent investigation report.
+- Bedrock Converse and a basic Harness invocation returned real model responses. AWS Toolkit authenticated discovery returned its tools in us-east-1.
+- Agent deployment failed because the reflection memory namespace must be the same as or a parent of the episode namespace. The template is corrected locally; the failed stack finished rollback. No hosted investigator or end-to-end incident-to-Slack run succeeded.
+- Deployment and traffic are stopped. The legacy tools dependency, Code Interpreter import, and Pillow override have been removed. AgentCore Code Interpreter remains pending a supported vended adapter; AWS Toolkit execution is a different integration.
+- The local environment was synchronized from the remaining dependency graph: 98 compatible packages, with no legacy tools distribution or import namespace. Agent and SDK-vended Python tool imports passed, four focused Slack/configuration checks passed, all templates passed linting, and deployment scripts passed syntax checks. These are local checks, not hosted execution.
+- Seven legacy local build artifacts and the single uploaded agent archive were removed. They must not be reused for deployment.
+- Earlier validation below records historical code and must not be read as validation of the current source.
+
+
 ## October 26, 2026 — Secrets Manager configuration
 
 - Four focused local checks passed: the Slack function reads the JSON secret and picks up changed destinations on the next report; a secret retrieval failure prevents posting; demo commands select an explicit AWS profile/region and discover stack outputs; the full deployment scripts resolve only secret metadata and pass the ARN without reading the token or requiring a `.env` file.

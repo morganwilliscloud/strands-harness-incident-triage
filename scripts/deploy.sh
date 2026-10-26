@@ -24,6 +24,7 @@ artifact_key="agents/$(basename "$archive_path")"
   --stack-name "$name_prefix-agents" \
   --template-file templates/agents.yaml \
   --capabilities CAPABILITY_IAM \
+  --disable-rollback \
   --parameter-overrides \
     "ApplicationStack=$name_prefix-app" \
     "NamePrefix=$name_prefix" \

@@ -1,5 +1,8 @@
 # Run of show: Ghosts in the Logs: Build an AWS Incident Triage Agent with Strands Harness
 
+**Implementation:** One TypeScript agent using Harness, managed AWS MCP, and the published AgentCore Code Interpreter integration. See `VALIDATION.md` for rehearsal results.
+
+
 **Date:** October 28, 2026\
 **Length:** 60 minutes\
 **Main host:** Leads the technical explanation, code walkthrough, and demo.\
@@ -60,7 +63,7 @@ Each segment lists its estimated duration and the cumulative running time at the
   - Candy storefront → API Gateway → checkout Lambda and DynamoDB, with CloudWatch logs and metrics.
   - CloudWatch alarm → EventBridge → intake Lambda.
   - Strands Harness agent hosted in AgentCore Runtime, using a model through Amazon Bedrock.
-  - AWS Toolkit, shell/CLI, and Code Interpreter for investigation and analysis.
+  - AWS Toolkit and Code Interpreter for investigation and analysis.
   - Packaged runbooks, session storage, and AgentCore Memory.
   - Findings and an on-call mention posted directly to Slack.
 - State the demo’s finish line: a useful investigation report and recommended recovery steps. The engineer performs the recovery.
@@ -100,15 +103,15 @@ Demonstrate the simple run and export; explain the defaults without trying to fo
 ## 4. Build the incident-triage agent for our application
 
 **Duration:** 10 minutes — puts us **30 minutes into the show**.\
-**Screen:** `agent.py`, with the packaged runbook opened alongside it.
+**Screen:** `agent.ts`, with the packaged runbook opened alongside it.
 
 **Make the Harness specific to the application.**
 
 - Build out the actual incident-triage agent, connecting it back to the basic example.
 - Add the task-specific instructions, application details, and Bedrock model configuration.
-- Explain how the default shell and file tools let it write Python and issue AWS CLI commands during an investigation.
+- Show `builtinTools: ["read"]`: keep runbook reading, disable host shell and general web tools, and use the AWS Toolkit for AWS queries.
 - Connect Agent Toolkit for AWS through its official MCP integration for documentation, AWS skills, and AWS operations.
-- Show the existing Code Interpreter integration for analyzing collected evidence.
+- Show `CodeInterpreterTools` from the AgentCore TypeScript SDK: code execution, shell commands, and file operations in a separate interpreter session.
 - Briefly explain how to add an integration through `tools`, or explicitly select/disable built-ins when needed.
 
 **Rafael’s question:**
@@ -141,7 +144,7 @@ Demonstrate the simple run and export; explain the defaults without trying to fo
 **Finish the path from invocation to report.**
 
 - Walk through the Runtime entrypoint and background invocation.
-- Follow the returned report into `post_report_to_slack`.
+- Follow the returned report into `postReportToSlack`.
 - Show the JSON secret containing `bot_token`, `channel_id`, and `oncall_user_id`. The agent retrieves it when posting; deployment supplies only the secret ARN.
 
 Keep the screen on the actual agent and runbook. Build on the defaults explained in the previous segment rather than explaining them again.
@@ -157,11 +160,11 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 
 **Main host:**
 
-- Walk through the agent’s infrastructure-as-code template and use it to deploy the prepared package to AgentCore Runtime.
-- Explain that the package contains the agent, its dependencies, the AWS CLI, and the runbook.
-- While deployment runs, show the runtime role’s allowed investigation actions and resource scope.
+- Walk through the agent’s infrastructure-as-code template and deploy the prepared package as an update to the rehearsed stack. Pre-provision AgentCore Memory before the show; its initial provisioning can exceed this segment.
+- Explain that the package contains the agent, compiled JavaScript, locked Node.js dependencies, and the runbook.
+- While deployment runs, show the dedicated investigation role’s allowed actions and resource scope.
 - Distinguish application investigation permissions from the permissions needed for the agent’s own model, memory, sessions, and Slack secret.
-- Explain that the AWS CLI and Toolkit operate under AWS permissions; writing a command does not grant permission to execute its AWS operation.
+- Show that Toolkit assumes the investigation role, while Code Interpreter uses SANDBOX networking and has no AWS resource permissions.
 - Confirm the alarm route is connected to the deployed agent.
 
 **Rafael’s bridge:**

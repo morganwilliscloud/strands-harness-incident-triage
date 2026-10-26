@@ -8,6 +8,6 @@ Successful requests log checkout.completed with an order ID. Requests log checko
 
 The CloudWatch alarm measures Lambda Errors divided by Invocations. Generated traffic is included in these counts. They do not represent unique customers.
 
-The agent's role allows specific investigation APIs plus its own memory, session, logging, model, and Slack-secret operations. It has no permission to update the sample Lambda or write orders. IAM governs AWS API requests, not local shell execution.
+The AWS Toolkit uses a dedicated role allowing specific investigation APIs. It cannot retrieve the Slack secret, change the sample Lambda, or write orders. The runtime handles model, memory, sessions, and Slack separately. Code Interpreter has a separate execution role with no AWS resource permissions and SANDBOX networking. Host shell and general web tools are disabled.
 
 Recovery is performed by the engineer. A falling alarm alone does not prove a proposed fix was applied.
