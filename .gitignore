@@ -10,5 +10,6 @@ __pycache__/
 node_modules/
 dist/
 .hyperframes/
+.thumbnails/
 examples/basic/.agent/
 examples/basic/checklist.md
