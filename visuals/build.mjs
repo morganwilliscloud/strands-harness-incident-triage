@@ -71,7 +71,7 @@ async function save(name,body,title,notes,sz=[1920,1080],folder='svg'){
 current='01-title'
 let s=`<rect width="1920" height="1080" fill="#000"/><rect x="1050" width="870" height="1080" fill="url(#fade)"/><rect x="1150" y="150" width="770" height="850" fill="url(#dots)"/>`
 s+=wordmark(94,70,360)+pill(94,174,330,'HALLOWEEN LIVE BUILD',C.pink)
-s+=text(88,370,'Trick or',110,C.white,'mono',600)+text(88,508,'Trace',110,C.green,'mono',600)
+s+=text(88,470,'Trick or ',110,C.white,'mono',600)+text(88+width('Trick or ',110,'mono',600),470,'Trace',110,C.green,'mono',600)
 s+=text(94,605,'Build an AWS incident triage agent',42,C.white)+text(94,667,'with Strands harness',42,C.white)
 s+=frog(1300,366,380,C.green,true)+ghost(1160,268,1.1,C.pink)+ghost(1750,612,1.3,C.white)+pumpkin(1360,833,1.45)
 s+=line(1170,796,1800,796,C.green,2)+text(1660,872,'On-call wizard.',29,C.green,'mono',600,'middle')
