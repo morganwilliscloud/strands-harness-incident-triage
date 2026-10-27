@@ -87,7 +87,7 @@ s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'AGENTCORE RUNTIME',2
 s+=smallCard(80,560,390,151,'AWS MCP','Reads app logs, metrics and configuration.',C.green,'cloud')+smallCard(80,749,390,151,'Code Interpreter','Runs generated analysis code.',C.orange,'terminal')
 s+=arrow([[560,649],[478,649]],C.green)+arrow([[478,676],[551,676]],C.green)+arrow([[560,758],[514,758],[514,821],[478,821]],C.orange)+arrow([[478,848],[533,848],[533,785],[551,785]],C.orange)
 s+=smallCard(1450,622,390,182,'Slack report','Findings + next steps + on-call mention.',C.pink,'chat')+arrow([[1352,704],[1441,704]],C.pink)
-s+=line(780,818,780,870,C.line,2)+line(1015,818,1015,870,C.line,2)+line(1245,818,1245,870,C.line,2)
+s+=line(677.5,818,677.5,870,C.line,2)+line(937,818,937,870,C.line,2)+line(1214,818,1214,870,C.line,2)
 s+=pill(560,876,235,'BEDROCK',C.green)+pill(813,876,248,'S3 SESSIONS',C.pink)+pill(1079,876,270,'AGENTCORE MEMORY',C.pink)
 s+=text(1450,875,'The engineer applies',26,C.muted)+text(1450,912,'the recommended fix.',26,C.muted)
 await save(current,s,'Overall architecture','Read the top row left to right, then follow the event into Runtime. Intake Lambda only dispatches. Bidirectional tool connectors carry requests and results. Bedrock provides the model; S3 stores incident snapshots; AgentCore Memory stores lessons. Report text and mention are posted directly to Slack by application code. The current demo does not post a ticket or report URL. Not every deployed support resource is drawn.')
