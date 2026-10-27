@@ -17,6 +17,7 @@
     #gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); gap: 24px; }
     article { overflow: hidden; border: 1px solid #43534a; border-radius: 20px; background: #101712; }
     article img { width: 100%; aspect-ratio: 16/9; display: block; }
+    article video { width: 100%; aspect-ratio: 16/9; display: block; }
     h2 { font: 500 18px Mono, monospace; margin: 20px; }
     a { color: #00cc60; text-decoration: none; }
     a:focus-visible { outline: 3px solid #ff70eb; outline-offset: 3px; }
@@ -30,7 +31,13 @@
     <h1>Trick or Trace.</h1>
     <p>Click a graphic to open it full size. Use your browser’s Back button to return here.</p>
   </header>
-  <main id="gallery" aria-label="Livestream graphics"></main>
+  <main id="gallery" aria-label="Livestream graphics">
+    <article>
+      <video controls preload="metadata" poster="countdown/poster.png" src="countdown/trick-or-trace-countdown.mp4"></video>
+      <h2>Trick or Trace / 30-second countdown</h2>
+      <a class="download" href="countdown/trick-or-trace-countdown.mp4" download>Download MP4</a>
+    </article>
+  </main>
   <script type="module">
     const graphics = await fetch('manifest.json').then(response => response.json())
     const gallery = document.querySelector('#gallery')

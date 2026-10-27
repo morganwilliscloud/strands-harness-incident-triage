@@ -9,5 +9,6 @@ __pycache__/
 *.zip
 node_modules/
 dist/
+.hyperframes/
 examples/basic/.agent/
 examples/basic/checklist.md

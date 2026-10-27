@@ -1,0 +1,109 @@
+<template>
+<style>
+@font-face{font-family:JetBrains;src:url('assets/fonts/JetBrainsMono.ttf');font-weight:100 900}
+@font-face{font-family:SpaceGrotesk;src:url('assets/fonts/SpaceGrotesk.ttf');font-weight:100 900}
+#root{position:absolute;inset:0;color:#fff;font-family:SpaceGrotesk,sans-serif;--green:var(--brand-green,#00cc60)}
+*{box-sizing:border-box}.clip{position:absolute;inset:0}.ground{position:absolute;inset:0;background:#000}.dots{position:absolute;inset:0;background-image:radial-gradient(#0d3010 1.5px,transparent 1.5px);background-size:26px 26px;mask-image:linear-gradient(90deg,#000,transparent 33%,transparent 68%,#000)}
+.brand{position:absolute;left:805px;top:92px;width:310px;height:45px}.title{position:absolute;top:180px;left:280px;width:1360px;margin:0;text-align:center;font:600 76px/1.2 JetBrains,monospace;letter-spacing:-4px}.subtitle{position:absolute;top:282px;left:340px;width:1240px;margin:0;text-align:center;color:#bacbbf;font-size:34px;font-weight:500}.intro-label{position:absolute;top:390px;left:680px;width:560px;margin:0;text-align:center;font:500 28px/1.2 JetBrains,monospace;color:#fff;letter-spacing:5px}
+.number{position:absolute;left:650px;top:425px;width:620px;text-align:center;color:var(--green);font:600 300px/1.2 JetBrains,monospace;letter-spacing:-16px;padding-right:16px;transform-origin:50% 54%}
+.progress{position:absolute;left:592px;top:810px;width:740px;height:14px;fill:var(--green)}
+.frog{position:absolute;left:172px;top:490px;width:365px;height:392px;object-fit:contain;image-rendering:pixelated}.ghost{position:absolute;left:1415px;top:478px;width:165px;height:171px;object-fit:contain;image-rendering:pixelated}.pumpkin{position:absolute;left:1495px;top:736px;width:148px;height:158px;object-fit:contain;image-rendering:pixelated}
+.web{position:absolute;top:0;width:335px;height:335px;stroke:#769c85;stroke-width:3;fill:none;opacity:.55}.web-left{left:0}.web-right{right:0;transform:scaleX(-1)}
+.spider-wrap{position:absolute;left:1610px;top:0;width:90px;height:400px}.thread{position:absolute;left:43px;top:0;width:2px;height:265px;background:#769c85;transform-origin:50% 0}.spider{position:absolute;left:0;top:254px;width:90px;height:82px}
+.live-copy{position:absolute;top:466px;left:500px;width:920px;text-align:center;font:600 108px/1.2 JetBrains,monospace;color:var(--green);letter-spacing:-7px}.live-sub{position:absolute;top:634px;left:600px;width:720px;text-align:center;font-size:36px;color:#fff}
+</style>
+<div data-hf-id="hf-ecgb" id="root" data-composition-id="countdown-stage" data-duration="33" data-width="1920" data-height="1080">
+<div data-hf-id="hf-37rw" class="ground" data-layout-ignore></div><div data-hf-id="hf-nph1" class="dots" data-layout-ignore></div>
+<div data-hf-id="hf-2ncu" id="brand-layer" class="clip" data-start="0" data-duration="33" data-track-index="1">
+<img data-hf-id="hf-8ulq" class="brand" src="assets/strands-wordmark.svg" alt="Strands"/>
+<h1 data-hf-id="hf-3vty" class="title" data-var-text="show-title">Trick or Trace</h1>
+<p data-hf-id="hf-i88g" class="subtitle" data-var-text="subtitle">AWS incident triage with Strands harness</p></div>
+<div data-hf-id="hf-x5y6" id="decorations" class="clip" data-start="0" data-duration="33" data-track-index="2" data-layout-ignore>
+<svg data-hf-id="hf-grhm" class="web web-left" viewBox="0 0 335 335"><path data-hf-id="hf-hi4n" d="M0 0L310 0M0 0L290 120M0 0L220 220M0 0L120 290M0 0L0 310M70 0L68 28L50 50L28 68L0 70M145 0L134 56L103 103L56 134L0 145M225 0L208 86L159 159L86 208L0 225M310 0L290 120L220 220L120 290L0 310"/></svg><svg data-hf-id="hf-8qfj" class="web web-right" viewBox="0 0 335 335"><path data-hf-id="hf-buw7" d="M0 0L310 0M0 0L290 120M0 0L220 220M0 0L120 290M0 0L0 310M70 0L68 28L50 50L28 68L0 70M145 0L134 56L103 103L56 134L0 145M225 0L208 86L159 159L86 208L0 225M310 0L290 120L220 220L120 290L0 310"/></svg>
+<img data-hf-id="hf-fctj" class="frog" src="assets/frog-wizard.png" alt="Strands frog in a wizard hat"/>
+<img data-hf-id="hf-1dgu" class="ghost" src="assets/pixel-ghost.png" alt="Pixel ghost"/>
+<img data-hf-id="hf-40mz" class="pumpkin" src="assets/pixel-pumpkin.png" alt="Pixel pumpkin"/>
+<div data-hf-id="hf-d6aw" class="spider-wrap"><div data-hf-id="hf-jyqg" class="thread"></div><svg data-hf-id="hf-kzwo" class="spider" viewBox="0 0 90 82" shape-rendering="crispEdges"><path data-hf-id="hf-aaew" fill="#ff70eb" d="M32 24h26v10h8v25h-8v10H32V59h-8V34h8zM16 16h8v18h-8zM8 8h8v16H8zM66 16h8v18h-8zM74 8h8v16h-8zM4 38h20v7H4zM66 38h20v7H66zM16 56h8v18h-8zM8 69h8v13H8zM66 56h8v18h-8zM74 69h8v13h-8z"/><path data-hf-id="hf-jdmp" fill="#000" d="M34 37h7v8h-7zM49 37h7v8h-7z"/></svg></div></div>
+<div data-hf-id="hf-2wwn" id="countdown-label" class="clip" data-start="0" data-duration="30.5" data-track-index="3"><p data-hf-id="hf-qey1" class="intro-label">STARTING IN</p></div>
+<div data-hf-id="hf-9xka" id="number-30" class="clip number-slot" data-start="0" data-duration="1" data-track-index="4"><div data-hf-id="hf-b93k" class="number">30</div></div>
+<div data-hf-id="hf-42qt" id="number-29" class="clip number-slot" data-start="1" data-duration="1" data-track-index="4"><div data-hf-id="hf-98m6" class="number">29</div></div>
+<div data-hf-id="hf-qomv" id="number-28" class="clip number-slot" data-start="2" data-duration="1" data-track-index="4"><div data-hf-id="hf-8ub5" class="number">28</div></div>
+<div data-hf-id="hf-uhwh" id="number-27" class="clip number-slot" data-start="3" data-duration="1" data-track-index="4"><div data-hf-id="hf-bmgc" class="number">27</div></div>
+<div data-hf-id="hf-vsv3" id="number-26" class="clip number-slot" data-start="4" data-duration="1" data-track-index="4"><div data-hf-id="hf-b85b" class="number">26</div></div>
+<div data-hf-id="hf-v92d" id="number-25" class="clip number-slot" data-start="5" data-duration="1" data-track-index="4"><div data-hf-id="hf-atua" class="number">25</div></div>
+<div data-hf-id="hf-47d3" id="number-24" class="clip number-slot" data-start="6" data-duration="1" data-track-index="4"><div data-hf-id="hf-afj9" class="number">24</div></div>
+<div data-hf-id="hf-gqq1" id="number-23" class="clip number-slot" data-start="7" data-duration="1" data-track-index="4"><div data-hf-id="hf-d7og" class="number">23</div></div>
+<div data-hf-id="hf-au0v" id="number-22" class="clip number-slot" data-start="8" data-duration="1" data-track-index="4"><div data-hf-id="hf-ctdf" class="number">22</div></div>
+<div data-hf-id="hf-ldl1" id="number-21" class="clip number-slot" data-start="9" data-duration="1" data-track-index="4"><div data-hf-id="hf-cf2e" class="number">21</div></div>
+<div data-hf-id="hf-0no4" id="number-20" class="clip number-slot" data-start="10" data-duration="1" data-track-index="4"><div data-hf-id="hf-c0rd" class="number">20</div></div>
+<div data-hf-id="hf-rm91" id="number-19" class="clip number-slot" data-start="11" data-duration="1" data-track-index="4"><div data-hf-id="hf-97nx" class="number">19</div></div>
+<div data-hf-id="hf-ez1f" id="number-18" class="clip number-slot" data-start="12" data-duration="1" data-track-index="4"><div data-hf-id="hf-9lyy" class="number">18</div></div>
+<div data-hf-id="hf-6v8d" id="number-17" class="clip number-slot" data-start="13" data-duration="1" data-track-index="4"><div data-hf-id="hf-eryb" class="number">17</div></div>
+<div data-hf-id="hf-lj7j" id="number-16" class="clip number-slot" data-start="14" data-duration="1" data-track-index="4"><div data-hf-id="hf-f69c" class="number">16</div></div>
+<div data-hf-id="hf-izz9" id="number-15" class="clip number-slot" data-start="15" data-duration="1" data-track-index="4"><div data-hf-id="hf-dzc9" class="number">15</div></div>
+<div data-hf-id="hf-kx57" id="number-14" class="clip number-slot" data-start="16" data-duration="1" data-track-index="4"><div data-hf-id="hf-edna" class="number">14</div></div>
+<div data-hf-id="hf-s531" id="number-13" class="clip number-slot" data-start="17" data-duration="1" data-track-index="4"><div data-hf-id="hf-d6q7" class="number">13</div></div>
+<div data-hf-id="hf-aavz" id="number-12" class="clip number-slot" data-start="18" data-duration="1" data-track-index="4"><div data-hf-id="hf-dl18" class="number">12</div></div>
+<div data-hf-id="hf-9ih1" id="number-11" class="clip number-slot" data-start="19" data-duration="1" data-track-index="4"><div data-hf-id="hf-ce45" class="number">11</div></div>
+<div data-hf-id="hf-pn0s" id="number-10" class="clip number-slot" data-start="20" data-duration="1" data-track-index="4"><div data-hf-id="hf-csf6" class="number">10</div></div>
+<div data-hf-id="hf-hp3j" id="number-9" class="clip number-slot" data-start="21" data-duration="1" data-track-index="4"><div data-hf-id="hf-h4u8" class="number">09</div></div>
+<div data-hf-id="hf-vsgf" id="number-8" class="clip number-slot" data-start="22" data-duration="1" data-track-index="4"><div data-hf-id="hf-gqj7" class="number">08</div></div>
+<div data-hf-id="hf-jmf3" id="number-7" class="clip number-slot" data-start="23" data-duration="1" data-track-index="4"><div data-hf-id="hf-bkju" class="number">07</div></div>
+<div data-hf-id="hf-5w5z" id="number-6" class="clip number-slot" data-start="24" data-duration="1" data-track-index="4"><div data-hf-id="hf-b68t" class="number">06</div></div>
+<div data-hf-id="hf-qqcn" id="number-5" class="clip number-slot" data-start="25" data-duration="1" data-track-index="4"><div data-hf-id="hf-cd5w" class="number">05</div></div>
+<div data-hf-id="hf-mgdz" id="number-4" class="clip number-slot" data-start="26" data-duration="1" data-track-index="4"><div data-hf-id="hf-byuv" class="number">04</div></div>
+<div data-hf-id="hf-a1fr" id="number-3" class="clip number-slot" data-start="27" data-duration="1" data-track-index="4"><div data-hf-id="hf-d5ry" class="number">03</div></div>
+<div data-hf-id="hf-6l3j" id="number-2" class="clip number-slot" data-start="28" data-duration="1" data-track-index="4"><div data-hf-id="hf-crgx" class="number">02</div></div>
+<div data-hf-id="hf-bofz" id="number-1" class="clip number-slot" data-start="29" data-duration="1" data-track-index="4"><div data-hf-id="hf-dye0" class="number">01</div></div>
+<div data-hf-id="hf-copy" id="number-0" class="clip number-slot" data-start="30" data-duration="0.5" data-track-index="4"><div data-hf-id="hf-dk2z" class="number">00</div></div>
+<div data-hf-id="hf-3w67" id="progress-layer" class="clip" data-start="0" data-duration="30.5" data-track-index="5" data-layout-ignore><svg data-hf-id="hf-fc4t" class="progress" viewBox="0 0 740 14"><rect data-hf-id="hf-dfzj" id="mark-0" x="0" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-6a4h" id="mark-1" x="25" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-ujio" id="mark-2" x="50" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-kkc8" id="mark-3" x="75" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-x6a6" id="mark-4" x="100" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-a8o4" id="mark-5" x="125" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-db0n" id="mark-6" x="150" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-6uf9" id="mark-7" x="175" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-l1y1" id="mark-8" x="200" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-hepb" id="mark-9" x="225" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-exhf" id="mark-10" x="250" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-xydd" id="mark-11" x="275" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-nqn3" id="mark-12" x="300" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-qngp" id="mark-13" x="325" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-f3fq" id="mark-14" x="350" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-qnyw" id="mark-15" x="375" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-pxcc" id="mark-16" x="400" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-yvda" id="mark-17" x="425" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-gsmt" id="mark-18" x="450" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-3j67" id="mark-19" x="475" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-nkd2" id="mark-20" x="500" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-63bw" id="mark-21" x="525" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-hoyf" id="mark-22" x="550" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-ittx" id="mark-23" x="575" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-bu4p" id="mark-24" x="600" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-251r" id="mark-25" x="625" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-k2tc" id="mark-26" x="650" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-ez3i" id="mark-27" x="675" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-n0hc" id="mark-28" x="700" y="0" width="15" height="14" rx="1"/>
+<rect data-hf-id="hf-j95e" id="mark-29" x="725" y="0" width="15" height="14" rx="1"/></svg></div>
+<div data-hf-id="hf-8u5q" id="live-card" class="clip" data-start="30.5" data-duration="2.5" data-track-index="4"><div data-hf-id="hf-wjn1" class="live-inner"><div data-hf-id="hf-1w3m" class="live-copy">We’re live.</div><div data-hf-id="hf-1x4v" class="live-sub">Let’s investigate.</div></div></div>
+</div>
+<script>
+const tl = gsap.timeline({paused:true});
+for(let n=30;n>=0;n--){
+ const start=30-n;
+ tl.fromTo(`#number-${n} .number`,{scale:n<=3?1.075:1.04},{scale:1,duration:.22,ease:'power3.out',immediateRender:false},start);
+}
+for(let n=0;n<30;n++) tl.to(`#mark-${n}`,{opacity:.15,duration:.12,ease:'none'},n+1);
+for(let t=4.6;t<30;t+=5){
+ tl.to('.frog',{y:-18,duration:.23,ease:'power2.out'},t);
+ tl.to('.frog',{y:0,duration:.3,ease:'power2.in'},t+.23);
+}
+tl.fromTo('.ghost',{y:0},{y:-24,duration:4,ease:'sine.inOut',repeat:7,yoyo:true},0);
+tl.fromTo('.thread',{scaleY:1},{scaleY:1.30,duration:6,ease:'sine.inOut',repeat:5,yoyo:true},0);
+tl.fromTo('.spider',{y:0},{y:80,duration:6,ease:'sine.inOut',repeat:5,yoyo:true},0);
+tl.fromTo('.web',{opacity:.18},{opacity:.55,duration:.8,ease:'power2.out'},0);
+tl.fromTo('.live-inner',{opacity:0,y:14},{opacity:1,y:0,duration:.3,ease:'power3.out',immediateRender:false},30.5);
+window.__timelines=window.__timelines||{};window.__timelines['countdown-stage']=tl;
+</script>
+</template>

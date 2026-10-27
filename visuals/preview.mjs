@@ -4,7 +4,7 @@ import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = dirname(fileURLToPath(import.meta.url))
-const types = { '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ttf': 'font/ttf' }
+const types = { '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.mp4': 'video/mp4' }
 
 createServer(async (request, response) => {
   try {
@@ -15,7 +15,19 @@ createServer(async (request, response) => {
       return
     }
     const data = await readFile(file)
-    response.writeHead(200, { 'Content-Type': types[extname(file)], 'Cache-Control': 'no-cache' }).end(data)
+    const headers = { 'Content-Type': types[extname(file)], 'Cache-Control': 'no-cache', 'Accept-Ranges': 'bytes' }
+    const range = request.headers.range?.match(/^bytes=(\d+)-(\d*)$/)
+    if (range) {
+      const start = Number(range[1])
+      const end = Math.min(range[2] ? Number(range[2]) : data.length - 1, data.length - 1)
+      if (start > end) {
+        response.writeHead(416, { 'Content-Range': `bytes */${data.length}` }).end()
+        return
+      }
+      response.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${data.length}`, 'Content-Length': end - start + 1 }).end(data.subarray(start, end + 1))
+      return
+    }
+    response.writeHead(200, { ...headers, 'Content-Length': data.length }).end(data)
   } catch {
     response.writeHead(404).end()
   }

@@ -4,6 +4,8 @@ Nine **1920 × 1080 PNGs**, matching editable SVGs, and six transparent overlays
 
 The [1280 × 720 thumbnail](thumbnail.png) uses the “Trick or Trace” title treatment. Use [the full-size title graphic](png/01-title.png) for the opening screen.
 
+The [countdown video](countdown/trick-or-trace-countdown.mp4) counts from 30 to zero, followed by a brief “We’re live” handoff. It is a silent 33-second, 1080p, 30 fps MP4 with the wizard frog, spiderwebs and Halloween characters. Add it as a media source and restart playback when it becomes visible. The [editable HyperFrames project](countdown/README.md) is included.
+
 ![Visual contact sheet](contact-sheet.png)
 
 | Graphic | Use it when | Files |
