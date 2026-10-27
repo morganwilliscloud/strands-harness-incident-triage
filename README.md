@@ -126,22 +126,25 @@ Open the application stack's `StorefrontUrl` and place a successful demo order. 
 `--profile` is optional; omit it to use your default AWS credential chain. `npm run demo -- --help` lists the available commands.
 
 ```bash
-npm run demo -- --profile DEMO_PROFILE --region us-east-1 start-traffic
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 haunt
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 start-traffic
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 status
 ```
 
-Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for two consecutive one-minute periods. Allow additional time for metric publication and alarm evaluation.
+`start-traffic` disables any existing minute schedule and immediately invokes the generator once. It sends 20 concurrent checkout Lambda requests and prints request/error counts; it does not keep sending traffic. Deploy the updated application template first so the CLI can discover its `TrafficFunction` output.
+
+Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for one one-minute period. Allow additional time for metric publication and alarm evaluation.
 
 Watch Runtime logs, AWS MCP calls, Code Interpreter analysis, and the Slack report. The investigation proposes recovery; it does not apply the fix.
 
 ```bash
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 reset
+npm run demo -- --profile DEMO_PROFILE --region us-east-1 start-traffic
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 status
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 stop-traffic
 ```
 
-Verify successful checkout and the alarm's recovery. Follow up in the original incident session without sending another Slack notification:
+With no traffic after the burst, missing data can return the alarm to `OK` even while the fault remains. Verify successful checkout after `reset`; alarm recovery alone is insufficient. Follow up in the original incident session without sending another Slack notification:
 
 ```bash
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 ask INCIDENT_UUID "What evidence supports the suspected configuration error?"

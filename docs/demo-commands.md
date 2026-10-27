@@ -66,7 +66,7 @@ This creates and reads a Halloween checklist. Show the tool activity in the term
 
 Next, show [the incident agent](../agent.ts), its [runbook](../.agent/skills/checkout-investigation/SKILL.md), and [the deployment template](../templates/agents.yaml). The incident agent sends generated analysis code to Code Interpreter.
 
-## 4. Establish healthy checkout and start traffic
+## 4. Establish healthy checkout
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" reset
@@ -76,23 +76,24 @@ npm run demo -- --prefix "$DEMO_PREFIX" status
 
 Place an order in the browser and show the success message. Wait for the alarm to report `OK` before injecting the fault. Repeat the `status` command as needed.
 
-`start-traffic` enables a scheduled generator that invokes the real checkout Lambda 20 times per minute. It starts on the next scheduled run, not immediately. These calls bypass the browser/API Gateway and produce real application logs and metrics.
+`start-traffic` sends one immediate burst of 20 concurrent calls to the real checkout Lambda, prints request/error counts, and stops. It disables any previously enabled minute schedule. These calls bypass the browser/API Gateway and produce real application logs and metrics. Healthy checkout should return `{"requests":20,"errors":0}`.
 
 ## 5. Haunt checkout
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" haunt
+npm run demo -- --prefix "$DEMO_PREFIX" start-traffic
 ```
 
-Wait for the command to finish, then click checkout in the storefront. Show the visible failure.
+The commands wait for the configuration update, then send the 20-request burst. Expect `{"requests":20,"errors":20}` when the fault is active. Click checkout in the storefront to show the visible failure.
 
-`haunt` changes the checkout Lambda's `TABLE_NAME` to a nonexistent table. It does not start traffic; the generator from section 4 must still be running.
+`haunt` changes the checkout Lambda's `TABLE_NAME` to a nonexistent table. It does not send traffic; run `start-traffic` after it as shown above. Each `start-traffic` command sends another batch of 20.
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" status
 ```
 
-Expect `ALARM` after two consecutive one-minute periods above 20% errors, with at least five requests in each period. Metric publication and evaluation add delay; it is not an instant trigger. The transition into `ALARM` routes the incident to the agent. Running `haunt` again while the alarm is already `ALARM` does not create a new transition.
+The demo alarm evaluates one one-minute period above 20% errors, with at least five requests. A failed burst satisfies the request minimum, although other traffic in that minute also contributes to the error rate. Metric publication and evaluation add delay; it is not an instant trigger. The transition into `ALARM` routes the incident to the agent. Running `haunt` again while the alarm is already `ALARM` does not create a new transition.
 
 ## 6. Watch the investigation and Slack report
 
@@ -108,7 +109,7 @@ aws logs tail "/aws/bedrock-agentcore/runtimes/$RUNTIME_ID-DEFAULT" \
 
 Use AgentCore observability in the same account/region to show tool inputs, outputs, code, and timing; see [the observability guide](observability.md). Use Slack to show the report and engineer mention. Runtime logs include `investigating`, `slack_posted`, and `completed` markers for successful alarm-triggered reports.
 
-`ACCEPTED` means the asynchronous request was dispatched. Wait for the report and completion. `Ctrl+C` stops the log viewer only; it does not stop the investigation or generated traffic.
+`ACCEPTED` means the asynchronous request was dispatched. Wait for the report and completion. `Ctrl+C` stops the log viewer only; it does not stop the investigation. The burst has already finished. With no subsequent traffic, the alarm can return to `OK` because missing data is treated as nonbreaching, even if checkout is still broken. Verify recovery with an actual successful checkout.
 
 ## 7. Fix checkout and verify recovery
 
@@ -118,13 +119,14 @@ Back in the first terminal:
 npm run demo -- --prefix "$DEMO_PREFIX" reset
 ```
 
-Click checkout again and show a successful order. Keep traffic running while healthy metrics reach CloudWatch:
+Click checkout again and show a successful order. Send a healthy burst, then check the alarm:
 
 ```bash
+npm run demo -- --prefix "$DEMO_PREFIX" start-traffic
 npm run demo -- --prefix "$DEMO_PREFIX" status
 ```
 
-Repeat until the alarm is `OK`. Then stop the generator:
+Repeat the `status` command until the alarm is `OK`. There is no recurring traffic to stop; this cleanup command also disables a schedule left on by an older deployment:
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" stop-traffic
@@ -170,7 +172,7 @@ npm run demo -- --prefix "$DEMO_PREFIX" reset
 npm run demo -- --prefix "$DEMO_PREFIX" stop-traffic
 ```
 
-This restores configuration and disables scheduled traffic. It does not delete the deployment or cancel an investigation already running. For verified alarm recovery, follow section 7 before stopping traffic.
+This restores configuration and disables any legacy scheduled traffic. It does not delete the deployment, cancel a burst already running, or cancel an investigation. For verified recovery, follow section 7.
 
 ## First-time AWS setup
 
@@ -195,6 +197,6 @@ bash scripts/deploy.sh "$DEPLOY_PROFILE" "$AWS_REGION" \
   "$DEMO_MODEL" "$SLACK_SECRET" "$DEMO_PREFIX"
 ```
 
-The deployment provisions the application, agent, and monitoring stacks and uploads the storefront and agent artifact. Both agent examples currently hardcode the model above; changing the helper's model argument alone does not change either agent's model. Confirm that model is available to the demo account before rehearsal.
+The deployment provisions the application, agent, and monitoring stacks and uploads the storefront and agent artifact. Deploy the updated application and monitoring templates before using the one-burst CLI; it requires the `TrafficFunction` stack output and the one-period demo alarm. Both agent examples currently hardcode the model above; changing the helper's model argument alone does not change either agent's model. Confirm that model is available to the demo account before rehearsal.
 
 Use the same AWS identity for subsequent commands, for example `export AWS_PROFILE="$DEPLOY_PROFILE"`. Follow the [observability prerequisites](observability.md), then return to section 2. Keep first-time provisioning out of the live demo's short deployment segment.

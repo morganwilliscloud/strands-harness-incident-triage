@@ -1,8 +1,8 @@
 import { BedrockAgentCoreClient, InvokeAgentRuntimeCommand, RetrieveMemoryRecordsCommand } from '@aws-sdk/client-bedrock-agentcore'
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation'
 import { CloudWatchClient, DescribeAlarmsCommand } from '@aws-sdk/client-cloudwatch'
-import { DisableRuleCommand, EnableRuleCommand, EventBridgeClient } from '@aws-sdk/client-eventbridge'
-import { GetFunctionConfigurationCommand, LambdaClient, UpdateFunctionConfigurationCommand, waitUntilFunctionUpdatedV2 } from '@aws-sdk/client-lambda'
+import { DisableRuleCommand, EventBridgeClient } from '@aws-sdk/client-eventbridge'
+import { GetFunctionConfigurationCommand, InvokeCommand, LambdaClient, UpdateFunctionConfigurationCommand, waitUntilFunctionUpdatedV2 } from '@aws-sdk/client-lambda'
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
 import { NodeHttpHandler } from '@smithy/node-http-handler'
 import { parseArgs } from 'node:util'
@@ -20,7 +20,7 @@ const { values, positionals } = parseArgs({
 if (values.help || positionals.length === 0) {
   console.log(`npm run demo -- [--profile PROFILE] [--region REGION] [--prefix haunted] COMMAND
 
-start-traffic
+start-traffic   Send one immediate burst of 20 concurrent checkout requests
 stop-traffic
 haunt
 reset
@@ -50,8 +50,17 @@ const application = await outputs('app')
 if (command === 'start-traffic' || command === 'stop-traffic') {
   const events = new EventBridgeClient(config)
   const input = { Name: application.TrafficRule }
-  await events.send(command === 'start-traffic' ? new EnableRuleCommand(input) : new DisableRuleCommand(input))
-  console.log(command)
+  await events.send(new DisableRuleCommand(input))
+  if (command === 'start-traffic') {
+    const client = new LambdaClient(config)
+    const response = await client.send(new InvokeCommand({
+      FunctionName: application.TrafficFunction, Payload: Buffer.from('{}'),
+    }))
+    if (response.FunctionError) throw new Error(new TextDecoder().decode(response.Payload))
+    console.log(new TextDecoder().decode(response.Payload))
+  } else {
+    console.log(command)
+  }
 } else if (command === 'haunt' || command === 'reset') {
   const client = new LambdaClient(config)
   const input = { FunctionName: application.FunctionName }

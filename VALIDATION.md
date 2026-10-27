@@ -1,5 +1,14 @@
 # Validation
 
+## October 27, 2026 — Immediate 20-request burst
+
+- Changed `start-traffic` to disable the legacy minute schedule, invoke the traffic generator once, and print request/error counts. `stop-traffic` disables the schedule without sending requests. The generator starts 20 checkout invocations concurrently with `Promise.all` and returns their error count.
+- Added the `TrafficFunction` application-stack output. Shortened the demo alarm to one 60-second evaluation period and one breaching datapoint; the >20% error threshold and minimum five requests remain unchanged. A burst does not eliminate CloudWatch publication/evaluation delay. Missing data remains nonbreaching, so alarm recovery alone does not prove checkout was fixed.
+- Type checking passed. Mocked checks verified all 20 invocations start before any completes, healthy and failed-batch counts, disabling the schedule before the one-shot invocation, stopping without invocation, and propagation of generator failures. Demo guide shell blocks passed syntax checks.
+- Applied reviewed CloudFormation change sets to `haunted-app` and `haunted-monitoring`; both reached `UPDATE_COMPLETE`. The deployed traffic Lambda is now Node.js 22. Other pending Lambda migrations were left unchanged.
+- Ran the actual `npm run demo -- --region us-east-1 start-traffic` command against healthy checkout: `{"requests":20,"errors":0}`. Confirmed the traffic schedule stayed `DISABLED`, the alarm uses one 60-second period / one datapoint, and alarm state was `OK`. No fault was injected for this verification; it was not another alarm-to-Slack rehearsal.
+- Updated the README, demo command guide, and run of show to send a burst after `haunt` and another healthy burst after `reset`.
+
 ## October 27, 2026 — Runtime V2
 
 - Verified the deployed `haunted_investigator-TQ1U0Z6CxF` was platform V1, revision 10. The repository template omitted `PlatformVersion`.

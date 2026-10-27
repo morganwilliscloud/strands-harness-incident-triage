@@ -227,12 +227,14 @@ Resources:
           const client = new LambdaClient({})
 
           exports.handler = async () => {
-            for (let i = 0; i < 20; i++) {
-              const response = await client.send(new InvokeCommand({
+            const responses = await Promise.all(Array.from({ length: 20 }, () =>
+              client.send(new InvokeCommand({
                 FunctionName: process.env.APP_FUNCTION, Payload: Buffer.from('{}'),
               }))
-              console.log({ status: response.FunctionError || 'OK' })
-            }
+            ))
+            const result = { requests: responses.length, errors: responses.filter(response => response.FunctionError).length }
+            console.log(result)
+            return result
           }
   TrafficSchedule:
     Type: AWS::Events::Rule
@@ -276,3 +278,5 @@ Outputs:
       Name: !Sub ${AWS::StackName}-ArtifactBucket
   TrafficRule:
     Value: !Ref TrafficSchedule
+  TrafficFunction:
+    Value: !Ref Traffic

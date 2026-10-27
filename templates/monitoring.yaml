@@ -13,11 +13,11 @@ Resources:
   Alarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: Checkout Lambda error rate exceeded 20 percent for two minutes.
+      AlarmDescription: Checkout Lambda error rate exceeded 20 percent for one minute.
       ComparisonOperator: GreaterThanThreshold
       Threshold: 20
-      EvaluationPeriods: 2
-      DatapointsToAlarm: 2
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
       TreatMissingData: notBreaching
       Metrics:
         - Id: errors
