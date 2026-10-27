@@ -79,6 +79,20 @@ Create a Slack app with `chat:write`, invite it to the demo channel, and store t
 
 Use the same AWS account and region as the agent and the default Secrets Manager encryption key. Keep actual values out of local files.
 
+Run the [Slack secret setup script](scripts/setup-slack.sh) from your terminal:
+
+```bash
+bash scripts/setup-slack.sh us-east-1 haunted-oncall/slack
+```
+
+It prompts for the bot token (hidden while typing), destination channel ID, and the member ID of the engineer to mention. It pipes the JSON directly to Secrets Manager and prints the secret ARN; no `.env` or temporary secret file is created. Use the bot's `xoxb-…` token, not a user token or app-level token. Supply raw IDs such as `C0123456789` and `U0123456789`, without `#`, `@`, or mention markup.
+
+The script requires Bash, Node.js, AWS CLI, and configured AWS credentials. It uses your current/default credentials; optionally prefix the command with `AWS_PROFILE=your-profile`. Your AWS identity needs `secretsmanager:CreateSecret` for creation or `secretsmanager:PutSecretValue` for updating. To replace all three values in an existing secret:
+
+```bash
+bash scripts/setup-slack.sh us-east-1 haunted-oncall/slack update
+```
+
 ```bash
 npm ci --ignore-scripts
 npm run check
