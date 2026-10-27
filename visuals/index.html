@@ -22,7 +22,6 @@
     a:focus-visible { outline: 3px solid #ff70eb; outline-offset: 3px; }
     article:hover { border-color: #00cc60; }
     .download { display: inline-block; padding: 0 20px 22px; font-size: 16px; }
-    footer { padding: 24px 32px 48px; text-align: center; color: #b5c5bb; }
   </style>
 </head>
 <body>
@@ -32,7 +31,6 @@
     <p>Click a graphic to open it full size. Use your browser’s Back button to return here.</p>
   </header>
   <main id="gallery" aria-label="Livestream graphics"></main>
-  <footer>1920 × 1080 PNGs · Editable SVGs · Ready for screen sharing</footer>
   <script type="module">
     const graphics = await fetch('manifest.json').then(response => response.json())
     const gallery = document.querySelector('#gallery')
