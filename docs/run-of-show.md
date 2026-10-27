@@ -193,7 +193,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 **Main host:**
 
 - Introduce the configuration failure.
-- Run `npm run demo -- haunt`, then `npm run demo -- start-traffic` to send one burst of 20 concurrent checkout requests. Return to the storefront and place another order. Show “Something’s haunting checkout” and the retry button.
+- Run `npm run demo -- haunt` to apply the fault and automatically send one burst of 20 concurrent checkout requests. Return to the storefront and place another order. Show “Something’s haunting checkout” and the retry button.
 - Connect the customer-visible failure to the checkout Lambda’s errors, then show the alarm changing state. The demo alarm needs at least five invocations and more than 20% errors in one one-minute period. Allow time for metric publication and evaluation; a single failed click does not trigger it alone.
 - Follow the investigation as it runs: skill loading, memory recall, commands, queries, documentation, and analysis.
 - Open the agent trace in CloudWatch. Select an AWS MCP tool call to inspect its request/result, then a Code Interpreter call to show the generated code and the linked service span. Use `docs/observability.md` for filters.

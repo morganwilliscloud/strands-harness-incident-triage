@@ -82,12 +82,11 @@ Place an order in the browser and show the success message. Wait for the alarm t
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" haunt
-npm run demo -- --prefix "$DEMO_PREFIX" start-traffic
 ```
 
-The commands wait for the configuration update, then send the 20-request burst. Expect `{"requests":20,"errors":20}` when the fault is active. Click checkout in the storefront to show the visible failure.
+`haunt` waits for the configuration update, then automatically sends the 20-request burst. Expect `{"requests":20,"errors":20}` when the fault is active. Click checkout in the storefront to show the visible failure.
 
-`haunt` changes the checkout Lambda's `TABLE_NAME` to a nonexistent table. It does not send traffic; run `start-traffic` after it as shown above. Each `start-traffic` command sends another batch of 20.
+`haunt` changes the checkout Lambda's `TABLE_NAME` to a nonexistent table. It then sends the traffic automatically. No separate `start-traffic` command is needed to trigger the demo. Use `start-traffic` only when you want an additional batch, such as checking healthy checkout after `reset`.
 
 ```bash
 npm run demo -- --prefix "$DEMO_PREFIX" status

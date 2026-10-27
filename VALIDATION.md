@@ -1,5 +1,11 @@
 # Validation
 
+## October 27, 2026 — One-command haunt
+
+- `haunt` now updates checkout configuration, waits for the Lambda update to finish, and sends one concurrent 20-request burst through the existing deployed generator. The shared traffic helper disables the legacy schedule before invocation. `start-traffic` remains available for extra/healthy bursts; `reset` does not send traffic.
+- Type checking and demo-guide shell syntax passed. Mocked checks verified traffic waits for configuration readiness, exactly one burst is sent, existing environment variables are retained, failed updates/waits prevent traffic, generator errors surface, and `reset` / `stop-traffic` send no requests.
+- Updated the README, command guide, and run of show to use `haunt` alone for the failure trigger. This is a local CLI change; no infrastructure redeployment was required, and no live fault or Slack notification was triggered during these checks.
+
 ## October 27, 2026 — Immediate 20-request burst
 
 - Changed `start-traffic` to disable the legacy minute schedule, invoke the traffic generator once, and print request/error counts. `stop-traffic` disables the schedule without sending requests. The generator starts 20 checkout invocations concurrently with `Promise.all` and returns their error count.

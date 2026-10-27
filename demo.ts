@@ -22,7 +22,7 @@ if (values.help || positionals.length === 0) {
 
 start-traffic   Send one immediate burst of 20 concurrent checkout requests
 stop-traffic
-haunt
+haunt          Apply the checkout fault, then send the 20-request burst
 reset
 status
 ask INCIDENT_UUID "Question"
@@ -47,18 +47,23 @@ async function outputs(stack: string) {
 }
 const application = await outputs('app')
 
-if (command === 'start-traffic' || command === 'stop-traffic') {
+async function sendTraffic() {
   const events = new EventBridgeClient(config)
-  const input = { Name: application.TrafficRule }
-  await events.send(new DisableRuleCommand(input))
+  await events.send(new DisableRuleCommand({ Name: application.TrafficRule }))
+  const client = new LambdaClient(config)
+  const response = await client.send(new InvokeCommand({
+    FunctionName: application.TrafficFunction, Payload: Buffer.from('{}'),
+  }))
+  if (response.FunctionError) throw new Error(new TextDecoder().decode(response.Payload))
+  console.log(new TextDecoder().decode(response.Payload))
+}
+
+if (command === 'start-traffic' || command === 'stop-traffic') {
   if (command === 'start-traffic') {
-    const client = new LambdaClient(config)
-    const response = await client.send(new InvokeCommand({
-      FunctionName: application.TrafficFunction, Payload: Buffer.from('{}'),
-    }))
-    if (response.FunctionError) throw new Error(new TextDecoder().decode(response.Payload))
-    console.log(new TextDecoder().decode(response.Payload))
+    await sendTraffic()
   } else {
+    const events = new EventBridgeClient(config)
+    await events.send(new DisableRuleCommand({ Name: application.TrafficRule }))
     console.log(command)
   }
 } else if (command === 'haunt' || command === 'reset') {
@@ -69,6 +74,7 @@ if (command === 'start-traffic' || command === 'stop-traffic') {
   await client.send(new UpdateFunctionConfigurationCommand({ ...input, Environment: { Variables: variables } }))
   await waitUntilFunctionUpdatedV2({ client, maxWaitTime: 120 }, input)
   console.log(JSON.stringify({ function: application.FunctionName, table: variables.TABLE_NAME }, null, 2))
+  if (command === 'haunt') await sendTraffic()
 } else if (command === 'status') {
   const monitoring = await outputs('monitoring')
   const result = await new CloudWatchClient(config).send(new DescribeAlarmsCommand({ AlarmNames: [monitoring.AlarmName] }))

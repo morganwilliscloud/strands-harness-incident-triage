@@ -127,11 +127,12 @@ Open the application stack's `StorefrontUrl` and place a successful demo order. 
 
 ```bash
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 haunt
-npm run demo -- --profile DEMO_PROFILE --region us-east-1 start-traffic
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 status
 ```
 
-`start-traffic` disables any existing minute schedule and immediately invokes the generator once. It sends 20 concurrent checkout Lambda requests and prints request/error counts; it does not keep sending traffic. Deploy the updated application template first so the CLI can discover its `TrafficFunction` output.
+`haunt` applies the checkout fault, waits for Lambda to finish updating, and automatically sends one burst of 20 concurrent requests. You do not need to run `start-traffic` afterward.
+
+For an additional burst, `start-traffic` disables any existing minute schedule and immediately invokes the generator once. It sends 20 concurrent checkout Lambda requests and prints request/error counts; it does not keep sending traffic. Deploy the updated application template first so the CLI can discover its `TrafficFunction` output.
 
 Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for one one-minute period. Allow additional time for metric publication and alarm evaluation.
 
