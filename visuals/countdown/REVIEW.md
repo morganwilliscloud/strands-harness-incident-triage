@@ -11,3 +11,5 @@ Encoded-file validation is recorded after export below.
 Export verified with ffprobe: H.264, 1920 × 1080, 30/1 fps, 990 frames, exactly 33 seconds, no audio stream. Inspected decoded frames 0, 29, 30, 899, 900 and 989: 30, 30, 29, 01, 00 and the live card.
 
 Subtitle revision: updated copy to “build an AWS incident triage agent with Strands harness”, increased subtitle from 34 to 48 px, and enlarged the centered wordmark from 310 to 400 px wide. Moved the spider right by 120 px for clearance. Full check passed; reviewed opening and closing snapshots. Re-exported 1080p/30 fps MP4 with unchanged 33-second timing.
+
+Final copy/color revision: capitalized “Build” and colored “Trace” #ff70eb. Full HyperFrames check passed; opening and ending snapshots retain spacing and timing.
