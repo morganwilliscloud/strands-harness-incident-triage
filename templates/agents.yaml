@@ -231,6 +231,7 @@ Resources:
     Type: AWS::BedrockAgentCore::Runtime
     Properties:
       AgentRuntimeName: !Sub ${NamePrefix}_investigator
+      PlatformVersion: V2
       RoleArn: !GetAtt AgentRole.Arn
       ProtocolConfiguration: HTTP
       NetworkConfiguration:

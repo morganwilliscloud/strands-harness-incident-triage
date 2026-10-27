@@ -1,5 +1,13 @@
 # Validation
 
+## October 27, 2026 — Runtime V2
+
+- Verified the deployed `haunted_investigator-TQ1U0Z6CxF` was platform V1, revision 10. The repository template omitted `PlatformVersion`.
+- Set `PlatformVersion: V2` in `templates/agents.yaml`. Applied the same one-property change to the live stack through a reviewed CloudFormation change set, retaining its existing artifact and parameters. Pending Node.js intake changes remain undeployed.
+- CloudFormation finished `UPDATE_COMPLETE`. `GetAgentRuntime` reports platform `V2`, revision `11`, status `READY`; the `DEFAULT` endpoint is `READY` with live version `11`.
+- Hosted smoke request `c423866d-de3e-48b3-8e90-a16d6071096c` returned `ACCEPTED`; CloudWatch subsequently recorded `investigating` and `completed`. It used `notify=false` and did not trigger an alarm or send Slack messages. This validates hosted execution after the platform change, not another full alarm-to-Slack rehearsal.
+- AWS CloudFormation template validation passed. The global cfn-lint launcher failed on its existing Python 3.14/Pydantic incompatibility before it could inspect the template.
+
 ## October 26, 2026 — Livestream visual kit
 
 - Created nine 1920×1080 PNG graphics with editable SVG sources, six transparent seasonal overlays, a contact sheet, and presenter notes. The style guide was read through the signed-in browser; the original public frog and wordmark assets and canonical fonts are included with provenance.

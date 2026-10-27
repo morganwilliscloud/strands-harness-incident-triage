@@ -95,7 +95,7 @@ The templates remain separate:
 
 1. `application.yaml`: storefront, checkout, orders table, disabled traffic generator, and artifact bucket.
 2. `monitoring.yaml`: error-rate alarm and optional EventBridge route.
-3. `agents.yaml`: Node.js Runtime, investigation role, Code Interpreter, memory, sessions, intake, intake failure queue, and Runtime/interpreter telemetry delivery.
+3. `agents.yaml`: Node.js Runtime with `PlatformVersion: V2`, investigation role, Code Interpreter, memory, sessions, intake, intake failure queue, and Runtime/interpreter telemetry delivery.
 
 CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. AWS ADOT exports native Strands spans and instruments HTTP and AWS SDK calls. Runtime and Code Interpreter service telemetry is enabled by the template. See [observability](docs/observability.md) for setup details, filters, and limitations.
 
