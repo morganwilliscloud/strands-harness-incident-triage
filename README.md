@@ -6,6 +6,8 @@ The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
+Use the [copy-and-paste demo commands](docs/demo-commands.md) to run the demo or hand it off to a colleague. The guide covers setup, the storefront, the basic harness example, real traffic, fault injection, Slack reporting, recovery, and memory follow-up.
+
 The [livestream visual kit](visuals/README.md) includes nine full-screen graphics, editable SVGs, presenter notes, and transparent Halloween frog overlays.
 
 ```mermaid
@@ -116,6 +118,8 @@ CloudWatch Transaction Search must be enabled in the account and region to searc
 The sample API is public and throttled. Use a demo account and remove resources when finished.
 
 ## Rehearsal
+
+Follow [demo-commands.md](docs/demo-commands.md) for the complete ordered walkthrough with expected results and cleanup commands.
 
 Open the application stack's `StorefrontUrl` and place a successful demo order. The commands discover resource IDs from CloudFormation. Use `--prefix` before the command if you deployed under another prefix.
 
