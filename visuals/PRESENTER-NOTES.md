@@ -1,8 +1,8 @@
-# Ghosts in the Logs: visual cues
+# Trick or Trace: visual cues
 
 Use the PNGs as full-screen 16:9 sources in your livestream software. Each diagram carries one main explanation; pause on it as long as needed.
 
-## 01-title: Ghosts in the logs
+## 01-title: Trick or Trace
 
 Opening or holding graphic. Establish the outcome: detect, investigate, report. The wizard is a seasonal treatment of the original frog, not a new product logo.
 

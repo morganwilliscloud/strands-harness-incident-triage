@@ -71,12 +71,12 @@ async function save(name,body,title,notes,sz=[1920,1080],folder='svg'){
 current='01-title'
 let s=`<rect width="1920" height="1080" fill="#000"/><rect x="1050" width="870" height="1080" fill="url(#fade)"/><rect x="1150" y="150" width="770" height="850" fill="url(#dots)"/>`
 s+=wordmark(94,70,360)+pill(94,174,330,'HALLOWEEN LIVE BUILD',C.pink)
-s+=text(88,370,'Ghosts in',110,C.white,'mono',600)+text(88,508,'the logs.',110,C.green,'mono',600)
+s+=text(88,370,'Trick or',110,C.white,'mono',600)+text(88,508,'Trace',110,C.green,'mono',600)
 s+=text(94,605,'Build an AWS incident triage agent',42,C.white)+text(94,667,'with Strands harness',42,C.white)
 s+=frog(1300,366,380,C.green,true)+ghost(1160,268,1.1,C.pink)+ghost(1750,612,1.3,C.white)+pumpkin(1360,833,1.45)
 s+=line(1170,796,1800,796,C.green,2)+text(1660,872,'On-call wizard.',29,C.green,'mono',600,'middle')
 s+=pill(94,812,220,'DETECT',C.yellow,26)+arrow([[335,834],[389,834]],C.muted)+pill(410,812,320,'INVESTIGATE',C.green,26)+arrow([[750,834],[804,834]],C.muted)+pill(826,812,220,'REPORT',C.pink,26)
-await save(current,s,'Ghosts in the logs','Opening or holding graphic. Establish the outcome: detect, investigate, report. The wizard is a seasonal treatment of the original frog, not a new product logo.')
+await save(current,s,'Trick or Trace','Opening or holding graphic. Establish the outcome: detect, investigate, report. The wizard is a seasonal treatment of the original frog, not a new product logo.')
 
 current='02-architecture'
 s=base('An alarm becomes an investigation.','One investigator, with managed services doing different jobs.','THE WHOLE SYSTEM')
@@ -171,10 +171,12 @@ for(const [name,color,hat] of [['frog-wizard',C.green,true],['frog-green',C.gree
 current='pixel-ghost';await save(current,ghost(52,20,10,C.white),'Pixel ghost','',[504,520],'overlays')
 current='pixel-pumpkin';await save(current,pumpkin(20,20,8),'Pixel pumpkin','',[488,520],'overlays')
 
+await sharp(path.join(root,'png/01-title.png')).resize(1280,720).png().toFile(path.join(root,'thumbnail.png'))
+
 const thumbs=await Promise.all(manifest.map(async(m,i)=>({input:await sharp(path.join(root,m.png)).resize(640,360).png().toBuffer(),left:(i%3)*656,top:Math.floor(i/3)*376})))
 await sharp({create:{width:1952,height:1112,channels:4,background:'#000'}}).composite(thumbs).png().toFile(path.join(root,'contact-sheet.png'))
 await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify(manifest,null,2)+'\n')
-await fs.writeFile(path.join(root,'PRESENTER-NOTES.md'),'# Ghosts in the Logs: visual cues\n\nUse the PNGs as full-screen 16:9 sources in your livestream software. Each diagram carries one main explanation; pause on it as long as needed.\n\n'+manifest.map(m=>`## ${m.name}: ${m.title}\n\n${m.notes}\n`).join('\n'))
+await fs.writeFile(path.join(root,'PRESENTER-NOTES.md'),'# Trick or Trace: visual cues\n\nUse the PNGs as full-screen 16:9 sources in your livestream software. Each diagram carries one main explanation; pause on it as long as needed.\n\n'+manifest.map(m=>`## ${m.name}: ${m.title}\n\n${m.notes}\n`).join('\n'))
 const out=bounds.filter(b=>b.file.startsWith('0')&&(b.x<32||b.x+b.width>1888||b.y<16||b.y+b.height>1070))
 await fs.writeFile(path.join(root,'layout-check.json'),JSON.stringify({textElements:bounds.length,canvasOverflow:out},null,2)+'\n')
 if(out.length)throw new Error(`Text outside safe bounds: ${JSON.stringify(out)}`)

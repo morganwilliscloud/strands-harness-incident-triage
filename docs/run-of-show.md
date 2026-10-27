@@ -1,4 +1,4 @@
-# Run of show: Ghosts in the Logs: Build an AWS Incident Triage Agent with Strands harness
+# Run of show: Trick or Trace: Build an AWS Incident Triage Agent with Strands harness
 
 **Implementation:** One TypeScript agent using harness, managed AWS MCP, and the published AgentCore Code Interpreter integration. See `VALIDATION.md` for rehearsal results.
 

@@ -1,4 +1,4 @@
-# Ghosts in the Logs: AWS Incident Triage with Strands harness
+# Trick or Trace: Build an AWS Incident Triage Agent with Strands harness
 
 **Candy-store checkout fails → CloudWatch alarm → harness investigation → report in Slack.**
 

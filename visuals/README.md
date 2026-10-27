@@ -1,12 +1,14 @@
-# Ghosts in the Logs: livestream graphics
+# Trick or Trace: livestream graphics
 
 Nine **1920 × 1080 PNGs**, matching editable SVGs, and six transparent overlays. All rendered files are ready to use without installing anything.
+
+The [1280 × 720 thumbnail](thumbnail.png) uses the “Trick or Trace” title treatment. Use [the full-size title graphic](png/01-title.png) for the opening screen.
 
 ![Visual contact sheet](contact-sheet.png)
 
 | Graphic | Use it when | Files |
 |---|---|---|
-| 01 — Ghosts in the logs | Opening, holding screen, or closing | [PNG](png/01-title.png) · [SVG](svg/01-title.svg) |
+| 01 — Trick or Trace | Opening, holding screen, or closing | [PNG](png/01-title.png) · [SVG](svg/01-title.svg) |
 | 02 — Overall architecture | Explain the path from failed checkout to Slack | [PNG](png/02-architecture.png) · [SVG](svg/02-architecture.svg) |
 | 03 — Strands agent loop | Explain how the model and tools work together | [PNG](png/03-strands-loop.png) · [SVG](svg/03-strands-loop.svg) |
 | 04 — harness defaults | Introduce the basic TypeScript example | [PNG](png/04-harness-defaults.png) · [SVG](svg/04-harness-defaults.svg) |
