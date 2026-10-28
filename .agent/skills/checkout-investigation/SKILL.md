@@ -13,11 +13,11 @@ Use the AWS Toolkit to find current documentation, relevant AWS skills, and exec
 
 Use JSON output and explicitly select the application's Region. Discover the commands and queries you need; no custom investigation tools or prescribed query script are provided. Host shell and web tools are disabled. Use AWS Toolkit for AWS calls and Code Interpreter for generated analysis code and shell commands.
 
-Establish the time window from the alarm. Inspect Lambda configuration, the expected deployed resources, application logs, and metrics. Start with 15 minutes before the alarm and continue to the current time. Keep query IDs, timestamps, counts, and source URLs.
+Establish the time window and affected service from the alarm. Choose relevant logs, metrics, and resource inspections based on the evidence you find. Start with 15 minutes before the alarm and continue to the current time. Keep query IDs, timestamps, counts, and source URLs.
 
 Distinguish Lambda Invocations and Errors from unique customers. Wait for Logs Insights queries to complete before interpreting them. Missing CloudWatch observations are unknown, not zero. An unrelated warning is not proof of the cause.
 
-Use Code Interpreter to analyze the collected data: align timestamps, calculate error rates, and compare the baseline with the failure window. You can write files, execute Python, and run shell commands there. Pass evidence into that separate environment; it does not share the agent's source files or credentials. Its SANDBOX network mode and separate execution role are not configured for application API access. The application closes the interpreter session after the investigation.
+Use Code Interpreter when computation helps analyze collected evidence. Choose the analysis based on the investigation; do not run code solely to demonstrate a tool call. You can write files, execute Python, and run shell commands there. Pass evidence into that separate environment; it does not share the agent's source files or credentials. Its SANDBOX network mode and separate execution role are not configured for application API access. The application closes the interpreter session after the investigation.
 
 Return a concise report in Slack mrkdwn, aiming for fewer than 3,500 characters. The application posts your returned report; do not post it yourself.
 

@@ -1,5 +1,17 @@
 # Validation
 
+## October 28, 2026 — Fresh alarm investigation without prior lessons
+
+- Removed the expected table name from agent instructions and Runtime environment, the table-comparison hint and preclassified warning from the architecture reference, and the prescribed Code Interpreter calculations from the runbook. The agent retains service topology, resource identifiers, evidence/reporting guidance, and execution boundaries.
+- Deleted 29 unique AgentCore memory records, source conversation events across the 14 previous sessions, and 109 S3 session objects. Namespace listings overlapped, so counts were deduplicated. After deletion-index propagation, both memory namespaces returned zero records and zero retrieval matches; source events and S3 session objects were also zero immediately before the test.
+- Type checking, compilation, ARM64 packaging, and CloudFormation template validation passed. Deployed Runtime revision 13 through CloudFormation; DEFAULT and the stack reached READY / UPDATE_COMPLETE. Verified the deployed environment omits `APP_TABLE` and retains `OTEL_TRACES_SAMPLER=always_on`.
+- Reset checkout and sent 20 healthy requests with zero errors. `haunt` then sent 20 failing requests at approximately 02:33:15 UTC. CloudWatch entered ALARM at 02:34:13.982 UTC and the existing EventBridge/intake path invoked a new incident, `77f6f10d-fa76-29e2-0859-50f97a67e3f1`. The captured agent input contains only the normal investigation request and the alarm event, not a table-comparison instruction.
+- Trace `6ae15f265bcb2165302cc67717f3c7d1` contains 73 linked spans and seven agent loop cycles. The agent invocation took 74.39 seconds. Its explicit memory search returned an empty array. Four AWS MCP scripts collected configuration, CloudFormation resources, metrics, logs, and DynamoDB table status. The agent corrected a timestamp parsing error in one script and reported a denied `DescribeTable` attempt against the incorrectly referenced table.
+- The agent independently identified the misconfigured `TABLE_NAME` using the live Lambda configuration, `ResourceNotFoundException` logs, and the actual table discovered through CloudFormation. It reported the 20/20 metric error rate, distinguished 17 observed log errors from 20 metric errors, and ruled out promotion warnings using healthy-period evidence.
+- The agent did not invoke Code Interpreter tools. The application opened and closed its interpreter session, but no analysis code ran there. AWS MCP handled the generated investigation scripts.
+- Slack accepted the report at 02:35:41 UTC (`ts=1793154941.694959`), about 88 seconds after the alarm. The agent made no repairs. Its broad suggestion to redeploy the stack was not tested as a recovery procedure; use the documented `reset` command for demo recovery.
+- Memory remains enabled: this new investigation can generate new lessons. The test proves a fresh diagnosis for this injected fault, not performance across other incident types.
+
 ## October 28, 2026 — Capture unsampled incoming investigations
 
 - The real alarm incident `26367b9b-d0c4-49dc-d28d-87c5ce4a5e8a` completed and posted to Slack, but its trace contained only four Runtime/Code Interpreter service spans. The incoming Runtime span had `aws.trace.flag.sampled=false`. Reproduced the installed ADOT default sampler dropping child spans under an unsampled parent.

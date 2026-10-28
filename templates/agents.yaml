@@ -270,8 +270,6 @@ Resources:
         APP_STACK: !Ref ApplicationStack
         APP_FUNCTION:
           Fn::ImportValue: !Sub ${ApplicationStack}-FunctionName
-        APP_TABLE:
-          Fn::ImportValue: !Sub ${ApplicationStack}-TableName
         APP_LOG_GROUP:
           Fn::ImportValue: !Sub ${ApplicationStack}-LogGroup
         SLACK_SECRET_ARN: !Ref SlackSecretArn

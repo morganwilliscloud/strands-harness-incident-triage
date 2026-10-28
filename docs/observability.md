@@ -40,6 +40,8 @@ Code Interpreter application logs are in `/aws/vendedlogs/bedrock-agentcore/haun
 
 ## Verified rehearsal to explore
 
+For the full alarm-triggered investigation with cleared memory and no fault-specific runbook hints, open trace `6ae15f265bcb2165302cc67717f3c7d1`, incident `77f6f10d-fa76-29e2-0859-50f97a67e3f1`, on October 28, 2026, 02:34–02:36 UTC (October 27, 10:34–10:36 p.m. Eastern). It contains 73 linked spans and seven agent loop cycles. The memory search returned no records. Four AWS MCP calls discovered the bad table configuration from live evidence, and the report was posted to Slack. One script failed on timestamp parsing and was corrected in the next call. The agent chose not to execute Code Interpreter tools; its session-start/stop spans do not mean analysis code ran there.
+
 The sampling-fix rehearsal is trace `6ae157bcce27cfa3b08b9376c469c8b9`, incident `3fda5602-4542-4063-a24b-0043b9bb84e4`, on October 28, 2026, 02:06–02:08 UTC (October 27, 10:06–10:08 p.m. Eastern). It contains 50 linked spans, four agent loop cycles, a real AWS MCP configuration read, and Code Interpreter comparing the actual and expected table names. Its incoming trace was deliberately marked unsampled to verify that the demo still captures agent details. This read-only rehearsal did not send Slack or repair the fault.
 
 Set the time range to October 26, 2026, 20:02–20:04 UTC (4:02–4:04 p.m. Eastern). Trace `6adfb1d55150b65f646de9062b42a91e`, incident `965b947c-248e-4bb6-95e2-e2347582fe4b`, contains a real AWS MCP configuration read and all three interpreter tools. The error-rate calculation uses a clearly labeled synthetic fixture. It is not an actual outage.

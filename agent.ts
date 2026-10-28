@@ -65,7 +65,7 @@ async function investigate(incident: Incident) {
       instructions: [
         `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
         `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
-        `Expected DynamoDB table: ${env.APP_TABLE}. Stack: ${env.APP_STACK}.`,
+        `Application stack: ${env.APP_STACK}.`,
         `Host runbook directory: ${process.cwd()}/.agent/skills/checkout-investigation. Use read with absolute paths there; Code Interpreter has a separate filesystem.`,
         'Load checkout-investigation before working. Use AWS Toolkit to collect AWS evidence.',
         'Run generated analysis code and shell commands in Code Interpreter. Return Slack mrkdwn.',
