@@ -255,6 +255,7 @@ Resources:
         AGENT_OBSERVABILITY_ENABLED: 'true'
         OTEL_SERVICE_NAME: !Sub ${NamePrefix}_investigator
         OTEL_TRACES_EXPORTER: otlp
+        OTEL_TRACES_SAMPLER: always_on
         OTEL_LOGS_EXPORTER: none
         OTEL_METRICS_EXPORTER: none
         OTEL_NODE_ENABLED_INSTRUMENTATIONS: http,aws-sdk,undici

@@ -40,6 +40,8 @@ Code Interpreter application logs are in `/aws/vendedlogs/bedrock-agentcore/haun
 
 ## Verified rehearsal to explore
 
+The sampling-fix rehearsal is trace `6ae157bcce27cfa3b08b9376c469c8b9`, incident `3fda5602-4542-4063-a24b-0043b9bb84e4`, on October 28, 2026, 02:06–02:08 UTC (October 27, 10:06–10:08 p.m. Eastern). It contains 50 linked spans, four agent loop cycles, a real AWS MCP configuration read, and Code Interpreter comparing the actual and expected table names. Its incoming trace was deliberately marked unsampled to verify that the demo still captures agent details. This read-only rehearsal did not send Slack or repair the fault.
+
 Set the time range to October 26, 2026, 20:02–20:04 UTC (4:02–4:04 p.m. Eastern). Trace `6adfb1d55150b65f646de9062b42a91e`, incident `965b947c-248e-4bb6-95e2-e2347582fe4b`, contains a real AWS MCP configuration read and all three interpreter tools. The error-rate calculation uses a clearly labeled synthetic fixture. It is not an actual outage.
 
 This trace links the Runtime service span, incoming HTTP request, Strands agent/tool spans, AWS SDK calls, and Code Interpreter service operations. Transport negotiation and first-use session loading also produced HTTP 400/405 and S3 404 spans; the actual MCP operation and all requested tools succeeded. Inspect the operation and returned result rather than treating every red transport span as an investigation failure.
@@ -51,6 +53,8 @@ The deployment installs `@aws/aws-distro-opentelemetry-node-autoinstrumentation@
 The startup file has two lines: load ADOT, then set `OTEL_TRACES_EXPORTER=none` for harness. ADOT reads the initial `otlp` setting and configures its exporter before that change. The second line prevents harness 0.3.1 from trying to register a second provider. It does not shut down ADOT. There is no custom exporter, trace provider, request handler, or manual flush in the agent.
 
 The template enables only `http`, `aws-sdk`, and `undici` instrumentation and selects `baggage,xray,tracecontext` propagators. `OTEL_SEMCONV_STABILITY_OPT_IN` retains GenAI input/output attributes for the walkthrough. Additional ADOT log/metric exporters are disabled; Runtime console logs, Code Interpreter application logs, and AWS service metrics use their existing platform deliveries.
+
+`OTEL_TRACES_SAMPLER=always_on` records every investigation for this low-volume demo, including invocations whose incoming trace is marked unsampled. ADOT's default parent-based sampler honors that incoming decision, which can leave Runtime and Code Interpreter service spans visible while omitting the agent/model/tool spans. CloudWatch Transaction Search's indexing percentage cannot recover spans the application never exported. Sampling every invocation increases telemetry volume; choose an appropriate sampling policy for production.
 
 The stack configures Runtime and Code Interpreter trace delivery, plus Code Interpreter application-log delivery. The Runtime role retains `xray:PutTraceSegments`. CloudWatch Transaction Search and its sampling settings are account-level prerequisites; they were already enabled in this account and were not changed.
 

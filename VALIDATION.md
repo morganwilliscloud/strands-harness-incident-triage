@@ -1,5 +1,13 @@
 # Validation
 
+## October 28, 2026 — Capture unsampled incoming investigations
+
+- The real alarm incident `26367b9b-d0c4-49dc-d28d-87c5ce4a5e8a` completed and posted to Slack, but its trace contained only four Runtime/Code Interpreter service spans. The incoming Runtime span had `aws.trace.flag.sampled=false`. Reproduced the installed ADOT default sampler dropping child spans under an unsampled parent.
+- Added `OTEL_TRACES_SAMPLER=always_on` to the agent CloudFormation template and deployed the environment-only change through CloudFormation. Runtime revision 12 and its DEFAULT endpoint are READY; the stack is UPDATE_COMPLETE. The existing agent artifact and pending Lambda migrations were preserved.
+- Invoked a fresh session with both X-Ray and W3C incoming sampling flags explicitly set to zero and `notify=false`. Incident `3fda5602-4542-4063-a24b-0043b9bb84e4`, trace `6ae157bcce27cfa3b08b9376c469c8b9`, produced 50 linked spans, including the successful agent invocation, four agent loop cycles, model calls, AWS MCP, and Code Interpreter. The Runtime service span retained its unsampled flag while ADOT exported the application spans.
+- AWS MCP successfully read the actual checkout configuration. Code Interpreter compared the observed `TABLE_NAME` with the expected table and returned `match: False`. Tool arguments/results and agent input/output are captured. This was a read-only verification, sent no Slack message, and did not reset the application fault.
+- CloudFormation template validation passed. No custom exporter, manual agent span, or new telemetry dependency was introduced.
+
 ## October 27, 2026 — One-command haunt
 
 - `haunt` now updates checkout configuration, waits for the Lambda update to finish, and sends one concurrent 20-request burst through the existing deployed generator. The shared traffic helper disables the legacy schedule before invocation. `start-traffic` remains available for extra/healthy bursts; `reset` does not send traffic.
