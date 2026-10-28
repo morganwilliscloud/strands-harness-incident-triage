@@ -8,6 +8,7 @@
   "scripts": {
     "basic": "cd examples/basic && tsx agent.ts",
     "demo": "tsx demo.ts",
+    "clear-memory": "tsx scripts/clear-memory.ts",
     "check": "tsc --noEmit",
     "build": "esbuild agent.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/agent.js"
   },

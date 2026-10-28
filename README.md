@@ -113,6 +113,14 @@ The sample API is public and throttled. Use a demo account and remove resources 
 
 ## Rehearsal
 
+For a fresh investigation without previous lessons or conversations, wait for any running investigation to finish, then run:
+
+```bash
+npm run clear-memory
+```
+
+This discovers the demo's stores from CloudFormation and deletes AgentCore memory records, source conversation events, and saved S3 sessions. It waits for listings and retrieval to become empty. Use `-- --profile DEMO_PROFILE --region us-east-1 --prefix haunted` if needed. It leaves the application and alarm unchanged; subsequent incidents can learn new lessons. See [the fresh-test steps](docs/demo-commands.md#clear-memory-before-a-fresh-test).
+
 Follow [demo-commands.md](docs/demo-commands.md) for the complete ordered walkthrough with expected results and cleanup commands.
 
 Open the application stack's `StorefrontUrl` and place a successful demo order. The commands discover resource IDs from CloudFormation. Use `--prefix` before the command if you deployed under another prefix.

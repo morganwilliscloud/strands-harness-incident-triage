@@ -164,6 +164,26 @@ npm run demo -- --prefix "$DEMO_PREFIX" memories \
 
 To demonstrate a second incident, repeat sections 4–7 after the alarm is `OK`. Inspect the actual memory/tool results before claiming the agent recalled the earlier lesson.
 
+## Clear memory before a fresh test
+
+Wait for running investigations and follow-ups to finish, then:
+
+```bash
+npm run clear-memory -- --prefix "$DEMO_PREFIX"
+```
+
+The command uses your normal AWS credentials and discovers resources from the `${DEMO_PREFIX}-agents` stack. It deletes learned AgentCore records, their source conversation events, and objects under `sessions/` in the demo's S3 session bucket. It checks listings and retrieval for up to five minutes, exiting with an error if data remains. Pending extraction or an active investigation can create new records; if that happens, wait for it to finish and rerun.
+
+For a different AWS profile or region:
+
+```bash
+npm run clear-memory -- --profile DEMO_PROFILE --region us-east-1 --prefix "$DEMO_PREFIX"
+```
+
+The caller needs CloudFormation stack-read access, AgentCore memory list/retrieve/delete access, and S3 list/delete access to the session store. The agent's investigation role is not used.
+
+This does not reset the fault or trigger traffic. Before another alarm test, follow the recovery steps in section 7 so checkout is healthy and the alarm is `OK`, then run `haunt`. Use the new incident ID rather than following up on an old incident. Memory remains enabled and the next investigation can save new lessons. Existing logs and Slack reports remain available.
+
 ## Finish or stop the demo early
 
 ```bash

@@ -1,5 +1,11 @@
 # Validation
 
+## October 28, 2026 — Memory cleanup command
+
+- Added `npm run clear-memory`, which discovers the deployed memory, service actor, and session bucket from the agents stack. It deletes source events, deduplicated memory records using their exact namespace, and S3 objects under `sessions/`, then waits for empty listings and retrieval.
+- `npm run check`, `npm run clear-memory -- --help`, and `node --import tsx --test scripts/clear-memory.test.ts` passed. Six mocked tests cover pagination, S3 batches, exact namespace selection, deletion propagation, missing outputs, already deleted records, permission failures, partial S3 failures, and timeout behavior.
+- The new command was not run destructively against AWS during validation. No live fault, traffic, or memory changes were made while adding it.
+
 ## October 28, 2026 — Remove Code Interpreter
 
 - Removed the interpreter import, tool registration, session startup/shutdown, and cleanup block from `agent.ts`. AWS MCP is the only remote investigation tool; the built-in host reader remains available for runbooks. The AgentCore SDK dependency remains necessary for Runtime and Memory.
