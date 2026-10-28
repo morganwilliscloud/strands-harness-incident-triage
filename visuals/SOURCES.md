@@ -33,8 +33,8 @@ The diagrams were checked against this repository:
 - The model selects tools; the SDK executes them.
 - harness's local defaults are configurable. Host shell/file access is not automatically isolated.
 - S3 snapshots and AgentCore lessons are this demo's chosen integrations. AgentCore Memory also supports short-term event storage.
-- Code Interpreter is a separate execution environment with its own role and filesystem. `SANDBOX` networking is not described as an air gap.
-- The agent assumes the investigation role before signing AWS MCP requests. Managed AWS MCP is not the demo's Code Interpreter instance.
+- AWS MCP executes generated investigation scripts remotely through `aws___run_script`; the agent host shell is disabled.
+- The agent assumes the investigation role before signing AWS MCP requests. AWS MCP runs remotely, outside the agent container.
 - The investigation role is restricted, but some metric/query-result reads require wildcard resource scope.
 - Slack contains the report text and on-call mention. Tickets, a report URL, and automatic remediation are outside the current demo.
 - The observability sequence and report are illustrations. They are labeled accordingly and do not impersonate actual trace screenshots.

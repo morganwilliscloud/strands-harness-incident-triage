@@ -1,6 +1,6 @@
 # Run of show: Trick or Trace: Build an AWS Incident Triage Agent with Strands harness
 
-**Implementation:** One TypeScript agent using harness, managed AWS MCP, and the published AgentCore Code Interpreter integration. See `VALIDATION.md` for rehearsal results.
+**Implementation:** One TypeScript agent using harness, managed AWS MCP for remote investigation and analysis. See `VALIDATION.md` for rehearsal results.
 
 
 **Date:** October 28, 2026\
@@ -77,7 +77,7 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
   - Candy storefront → API Gateway → checkout Lambda and DynamoDB, with CloudWatch logs and metrics.
   - CloudWatch alarm → EventBridge → intake Lambda.
   - Strands harness agent hosted in AgentCore Runtime, using a model through Amazon Bedrock.
-  - AWS Toolkit and Code Interpreter for investigation and analysis.
+  - AWS Toolkit for investigation and remote script execution.
   - Packaged runbooks, session storage, and AgentCore Memory.
   - Findings and an on-call mention posted directly to Slack.
 - State the demo’s finish line: a useful investigation report and recommended recovery steps. The engineer performs the recovery.
@@ -108,7 +108,7 @@ Keep this to the flow and the purpose of each component. The application and mon
 - Inspect `examples/basic/.agent/sessions` for saved conversation state. Inspect `.agent/memory` only if a reusable memory was extracted during rehearsal; the checklist task may not produce one. Distinguish continuing a conversation from recalling experience in a new one.
 - Explain that these defaults give us a working starting point, and we can configure or replace the pieces for our application.
 
-Demonstrate the simple run and its source; explain the defaults without trying to force every context-management or memory behavior to occur during this short example. The tools run locally; the next segment replaces host execution with the incident agent's restricted tools and remote interpreter.
+Demonstrate the simple run and its source; explain the defaults without trying to force every context-management or memory behavior to occur during this short example. The tools run locally; the next segment replaces host execution with the incident agent's restricted tools and remote AWS MCP execution.
 
 **Rafael’s bridge:**
 
@@ -125,7 +125,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 - Add the task-specific instructions, application details, and Bedrock model configuration.
 - Show `builtinTools: ["read"]`: keep runbook reading, disable host shell and general web tools, and use the AWS Toolkit for AWS queries.
 - Connect Agent Toolkit for AWS through its official MCP integration for documentation, AWS skills, and AWS operations.
-- Show `CodeInterpreterTools` from the AgentCore TypeScript SDK: code execution, shell commands, and file operations in a separate interpreter session.
+- Show the AWS MCP connection: the model generates investigation scripts, AWS MCP executes them remotely, and the results return to the agent.
 - Briefly explain how to add an integration through `tools`, or explicitly select/disable built-ins when needed.
 
 **Rafael’s question:**
@@ -178,7 +178,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 - Explain that the package contains the agent, compiled JavaScript, locked Node.js dependencies, and the runbook.
 - While deployment runs, show the dedicated investigation role’s allowed actions and resource scope.
 - Distinguish application investigation permissions from the permissions needed for the agent’s own model, memory, sessions, and Slack secret.
-- Show that Toolkit assumes the investigation role, while Code Interpreter uses SANDBOX networking and has no AWS resource permissions.
+- Show that the application assumes the investigation role and signs AWS MCP requests with those temporary credentials. Host shell tools are disabled.
 - Confirm the alarm route is connected to the deployed agent.
 
 **Rafael’s bridge:**
@@ -196,7 +196,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 - Run `npm run demo -- haunt` to apply the fault and automatically send one burst of 20 concurrent checkout requests. Return to the storefront and place another order. Show “Something’s haunting checkout” and the retry button.
 - Connect the customer-visible failure to the checkout Lambda’s errors, then show the alarm changing state. The demo alarm needs at least five invocations and more than 20% errors in one one-minute period. Allow time for metric publication and evaluation; a single failed click does not trigger it alone.
 - Follow the investigation as it runs: skill loading, memory recall, commands, queries, documentation, and analysis.
-- Open the agent trace in CloudWatch. Select an AWS MCP tool call to inspect its request/result, then a Code Interpreter call to show the generated code and the linked service span. Use `docs/observability.md` for filters.
+- Open the agent trace in CloudWatch. Select an AWS MCP tool call to inspect the generated script, its result, and the nested AWS API outcomes. Use `docs/observability.md` for filters.
 - Explain the evidence as it appears. Let the observed tool activity guide the commentary.
 - Open the Slack report and assess it together: cause, evidence, impact, uncertainty, and proposed recovery.
 

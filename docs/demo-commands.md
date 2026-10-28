@@ -64,7 +64,7 @@ npm run basic
 
 This creates and reads a Halloween checklist. Show the tool activity in the terminal, then the generated `examples/basic/checklist.md` and `.agent/sessions` directory in your editor. These default shell/file tools run on your computer.
 
-Next, show [the incident agent](../agent.ts), its [runbook](../.agent/skills/checkout-investigation/SKILL.md), and [the deployment template](../templates/agents.yaml). The incident agent sends generated analysis code to Code Interpreter.
+Next, show [the incident agent](../agent.ts), its [runbook](../.agent/skills/checkout-investigation/SKILL.md), and [the deployment template](../templates/agents.yaml). The incident agent sends generated investigation scripts to the managed AWS MCP server for remote execution.
 
 ## 4. Establish healthy checkout
 

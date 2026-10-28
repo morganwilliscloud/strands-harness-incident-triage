@@ -79,16 +79,18 @@ s+=pill(94,812,220,'DETECT',C.yellow,26)+arrow([[335,834],[389,834]],C.muted)+pi
 await save(current,s,'Trick or Trace','Opening or holding graphic. Establish the outcome: detect, investigate, report. The wizard is a seasonal treatment of the original frog, not a new product logo.')
 
 current='02-architecture'
-s=base('An alarm becomes an investigation.','One investigator, with managed services doing different jobs.')
-const top=[['Candy storefront','API Gateway → checkout Lambda → DynamoDB','box'],['CloudWatch alarm','Checkout errors cross the threshold.','alarm'],['EventBridge','Routes the ALARM state-change event.','route'],['Intake Lambda','Builds the prompt and invokes Runtime.','lambda']]
-for(let i=0;i<4;i++){let x=80+i*450;s+=smallCard(x,292,410,182,top[i][0],top[i][1],i===1?C.red:C.yellow,top[i][2]);if(i<3)s+=arrow([[x+412,383],[x+442,383]],C.yellow,2)}
+s=base('AWS incident response agent architecture','')
+const top=[['Candy storefront',['Amazon API Gateway','AWS Lambda','Amazon DynamoDB'],'box'],['Amazon CloudWatch',['Alarm: checkout errors','cross the threshold.'],'alarm'],['Amazon EventBridge',['Routes the alarm','state-change event.'],'route'],['AWS Lambda',['Intake: builds the prompt','and invokes the agent.'],'lambda']]
+for(let i=0;i<4;i++){let x=80+i*450,c=i===1?C.red:C.yellow;s+=rect(x,292,410,182)+icon(top[i][2],x+24,314,c,.65)+text(x+88,346,top[i][0],25,C.white,'mono',600);for(let j=0;j<top[i][1].length;j++)s+=text(x+26,389+j*32,top[i][1][j],25,C.muted);if(i<3)s+=arrow([[x+412,383],[x+442,383]],C.yellow,2)}
 s+=arrow([[1635,476],[1635,521],[954,521],[954,584]],C.yellow)
-s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'AGENTCORE RUNTIME',23,C.blue,'mono',600)+text(596,694,'Strands harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,635,145)
-s+=smallCard(80,560,390,151,'AWS MCP','Reads app logs, metrics and configuration.',C.green,'cloud')+smallCard(80,749,390,151,'Code Interpreter','Runs generated analysis code.',C.orange,'terminal')
-s+=arrow([[560,649],[478,649]],C.green)+arrow([[478,676],[551,676]],C.green)+arrow([[560,758],[514,758],[514,821],[478,821]],C.orange)+arrow([[478,848],[533,848],[533,785],[551,785]],C.orange)
+s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'Amazon Bedrock AgentCore Runtime',23,C.blue,'mono',600)+text(596,694,'Strands harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,635,145)
+s+=rect(80,585,390,255,C.card,C.green,24)+icon('cloud',104,607,C.green,.65)+text(168,639,'AWS MCP Server',28,C.white,'mono',600)+wrap(106,695,'Runs Python remotely. Reads logs, metrics and configuration. Returns evidence.',338,28)
+s+=arrow([[560,669],[478,669]],C.green)+arrow([[478,716],[551,716]],C.green)
 s+=smallCard(1450,622,390,182,'Slack report','Findings + next steps + on-call mention.',C.pink,'chat')+arrow([[1352,704],[1441,704]],C.pink)
 s+=line(677.5,818,677.5,870,C.line,2)+line(937,818,937,870,C.line,2)+line(1214,818,1214,870,C.line,2)
-s+=pill(560,876,235,'BEDROCK',C.green)+pill(813,876,248,'S3 SESSIONS',C.pink)+pill(1079,876,270,'AGENTCORE MEMORY',C.pink)
+s+=rect(560,876,235,96,'#090d0a',C.green,22,1.5)+text(677.5,916,'Amazon Bedrock',23,C.green,'body',600,'middle')+text(677.5,951,'Model',22,C.muted,'body',500,'middle')
+s+=rect(813,876,248,96,'#090d0a',C.pink,22,1.5)+text(937,916,'Amazon S3',23,C.pink,'body',600,'middle')+text(937,951,'Session snapshots',22,C.muted,'body',500,'middle')
+s+=rect(1079,876,270,96,'#090d0a',C.pink,22,1.5)+text(1214,916,'Amazon Bedrock',23,C.pink,'body',600,'middle')+text(1214,951,'AgentCore Memory',23,C.pink,'body',600,'middle')
 await save(current,s,'Overall architecture','Read the top row left to right, then follow the event into Runtime. Intake Lambda only dispatches. Bidirectional tool connectors carry requests and results. Bedrock provides the model; S3 stores incident snapshots; AgentCore Memory stores lessons. Report text and mention are posted directly to Slack by application code. The current demo does not post a ticket or report URL. Not every deployed support resource is drawn.')
 
 current='03-strands-loop'
@@ -120,15 +122,14 @@ s+=text(80,952,'S3 is this demo’s snapshot backend; AgentCore Memory also has 
 await save(current,s,'harness on Runtime with sessions and memory','Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.')
 
 current='06-runtime-interpreter'
-s=base('The agent runs here. Its analysis runs there.','Runtime hosts the investigator; Code Interpreter executes generated code.')
+s=base('The agent coordinates. AWS MCP executes.','Generated investigation scripts run remotely in the managed AWS MCP service.')
 s+=rect(80,300,765,620,'#101826',C.blue,32)+text(120,358,'AGENTCORE RUNTIME',30,C.blue,'mono',600)+rect(120,407,685,228,'#0b2514',C.green,24)+frog(607,459,154,C.green,true)+text(153,467,'Strands harness',38,C.white,'mono',600)+text(153,528,'Model calls + tool coordination',28,C.pale)+text(153,582,'Packaged source + runbook',28,C.pale)
-s+=icon('key',122,674,C.blue,.66)+text(190,711,'Runtime execution role',29,C.white,'mono',600)+wrap(121,768,'Model, sessions, memory, interpreter access and the Slack secret.',674,28)+pill(121,853,372,'HOST SHELL DISABLED',C.blue,23)
-s+=rect(1075,300,765,620,'#21170d',C.orange,32)+text(1115,358,'CODE INTERPRETER',30,C.orange,'mono',600)+rect(1115,407,685,228,'#101010',C.line,24)
-s+=text(1149,452,'synthetic-example.py',24,C.muted,'mono')+text(1149,511,'requests = 20',31,C.white,'mono')+text(1149,561,'errors = 20',31,C.white,'mono')+text(1149,611,'print(errors / requests)',31,C.green,'mono')
-s+=icon('key',1117,674,C.orange,.66)+text(1185,711,'Separate execution role',29,C.white,'mono',600)+text(1115,768,'Separate filesystem. Code, shell and files.',28,C.muted)+text(1115,810,'No app permissions granted in this demo.',27,C.muted)+pill(1115,853,363,'SANDBOX NETWORKING',C.orange,23)
-s+=arrow([[845,499],[1063,499]],C.green)+text(960,468,'code + data',22,C.green,'mono',600,'middle')+arrow([[1075,601],[857,601]],C.orange)+text(960,652,'results',22,C.orange,'mono',600,'middle')
-s+=text(80,966,'Explicit startSession → execute → stopSession. Runtime credentials are not passed into analysis code.',25,C.muted)
-await save(current,s,'Runtime and Code Interpreter boundaries','CodeInterpreterTools is the published AgentCore TypeScript integration. The Runtime process starts one interpreter session and closes it in finally. It sends selected code/data via service APIs and receives results. The interpreter role has no app-resource policies in this template. SANDBOX networking is not an absolute air gap. The Runtime itself has PUBLIC networking. Generated code running on the host would have a different access boundary; this demo disables the host shell.')
+s+=icon('key',122,674,C.blue,.66)+text(190,711,'Runtime execution role',29,C.white,'mono',600)+wrap(121,768,'Model, sessions, memory, Slack secret and STS AssumeRole.',674,28)+pill(121,853,372,'HOST SHELL DISABLED',C.blue,23)
+s+=rect(1075,300,765,620,'#0b2514',C.green,32)+text(1115,358,'MANAGED AWS MCP',30,C.green,'mono',600)+rect(1115,407,685,228,'#101010',C.line,24)
+s+=text(1149,459,'aws___run_script',30,C.green,'mono',600)+text(1149,518,'Collect logs and metrics.',29,C.white)+text(1149,571,'Inspect resource configuration.',29,C.white)+text(1149,614,'Compute and return evidence.',27,C.muted)
+s+=icon('key',1117,674,C.green,.66)+text(1185,711,'Investigation identity',29,C.white,'mono',600)+text(1115,768,'AWS operations follow the scoped role.',27,C.muted)+text(1115,810,'Script results return to the model.',27,C.muted)+pill(1115,853,363,'REMOTE EXECUTION',C.green,23)
+s+=arrow([[845,499],[1063,499]],C.green)+text(960,449,'signed HTTPS',21,C.green,'mono',600,'middle')+text(960,478,'+ Python',21,C.green,'mono',600,'middle')+arrow([[1075,601],[857,601]],C.pink)+text(960,652,'results',22,C.pink,'mono',600,'middle')
+await save(current,s,'Runtime and AWS MCP execution','The model generates Python tool arguments. Strands sends them over signed Streamable HTTP to the managed AWS MCP endpoint. AWS MCP executes the script remotely and returns evidence or an error. The application assumes the scoped investigation role to sign requests. No local STDIO server or host shell executes these investigation scripts. The underlying managed sandbox compute technology is not asserted here. This replaces the former interpreter diagram; its existing filename is retained for presenter bookmarks.')
 
 current='07-mcp-iam'
 s=base('AWS access follows the credentials.','Our agent assumes the investigation role before it calls managed AWS MCP.')
@@ -142,7 +143,7 @@ s+=icon('chart',1490,375,C.white,.72)+text(1490,486,'AWS APIs',28,C.white,'mono'
 s+=text(962,688,'SigV4 signing uses those temporary investigation credentials.',28,C.yellow,'body',500,'middle')
 s+=rect(80,752,844,181,'#0b2514',C.green,24)+icon('check',110,787,C.green,.65)+text(178,805,'ALLOWED',25,C.green,'mono',600)+text(110,858,'Read application logs, metrics and configuration.',29,C.white)+text(110,900,'Inspect stack resources and table metadata.',27,C.muted)
 s+=rect(974,752,866,181,'#241013',C.red,24)+text(1009,805,'NOT GRANTED TO THE INVESTIGATION ROLE',23,C.red,'mono',600)+text(1009,858,'Change the app, write orders, read the Slack secret.',28,C.white)+text(1009,900,'The model cannot grant itself extra permissions.',27,C.muted)
-await save(current,s,'AWS MCP and the investigation role','Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. Do not label AWS MCP as our Code Interpreter instance or draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.')
+await save(current,s,'AWS MCP and the investigation role','Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. AWS MCP executes remotely; do not draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.')
 
 current='08-skills-context-memory'
 s=base('Instructions. Working state. Experience.','Three kinds of information that help the same agent make its next decision.')
@@ -157,11 +158,11 @@ await save(current,s,'Skills, working context, and long-term memory','Use the ru
 current='09-observability'
 s=base('Watch the investigation unfold.','Use AgentCore observability to inspect actual tool inputs, outputs and timing.')
 s+=line(175,400,1745,400,C.green,5)
-const stages=[['Runtime','Request accepted','cloud'],['Model','Chooses a tool','model'],['AWS MCP','Collects evidence','chart'],['Interpreter','Runs analysis','terminal'],['Slack','Posts the report','chat']]
+const stages=[['Runtime','Request accepted','cloud'],['Model','Chooses a tool','model'],['AWS MCP','Runs the script','terminal'],['Model','Uses the evidence','model'],['Slack','Posts the report','chat']]
 for(let i=0;i<5;i++){const x=180+i*390,c=[C.blue,C.green,C.green,C.orange,C.pink][i];s+=`<circle cx="${x}" cy="400" r="65" fill="#080d09" stroke="${c}" stroke-width="3"/>`+icon(stages[i][2],x-29,370,c,.83)+text(x,515,stages[i][0],30,C.white,'mono',600,'middle')+text(x,566,stages[i][1],26,C.muted,'body',500,'middle')}
 s+=rect(80,649,1190,282,'#111713',C.green,24)+text(117,701,'ILLUSTRATIVE REPORT',24,C.green,'mono',600)+text(117,765,'Evidence: TABLE_NAME points to a missing table.',32,C.white)+text(117,824,'Recommendation: restore the expected table name.',29,C.white)+text(117,886,'The engineer applies the fix and verifies recovery.',29,C.muted)
 s+=frog(1530,743,158,C.green,true)+text(1604,940,'Show the tool result.',26,C.green,'mono',600,'middle')
-await save(current,s,'Inspect the investigation in observability','Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP nested API results, Code Interpreter code/results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.')
+await save(current,s,'Inspect the investigation in observability','Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP scripts and nested API results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.')
 
 for(const [name,color,hat] of [['frog-wizard',C.green,true],['frog-green',C.green,false],['frog-pink',C.pink,false],['frog-pumpkin-orange',C.orange,true]]){
  current=name;let body=frog(152,316,720,color,hat);await save(name,body,name,'',[1024,1100],'overlays')

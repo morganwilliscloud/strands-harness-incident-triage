@@ -2,7 +2,7 @@
 
 **Candy-store checkout fails → CloudWatch alarm → harness investigation → report in Slack.**
 
-The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; AWS ADOT is loaded at startup through `observability.cjs`. harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence. The AgentCore SDK's Strands Code Interpreter integration executes analysis code and shell commands in a separate environment. The application posts the returned report to Slack.
+The agent flow lives in `agent.ts`. AWS signing and MCP connection setup live in `support/aws.ts`; AWS ADOT is loaded at startup through `observability.cjs`. harness supplies the agent loop, context management, skill discovery, and memory integration. Managed AWS MCP collects AWS evidence and executes generated Python remotely in its managed sandbox. The application posts the returned report to Slack.
 
 See `VALIDATION.md` for the exact test status, [observability](docs/observability.md) for viewing code and tool execution, and `docs/run-of-show.md` for the one-hour livestream outline.
 
@@ -18,7 +18,6 @@ flowchart TD
     Intake --> Agent[TypeScript Strands harness in AgentCore Runtime]
     Agent -->|Signed requests with investigation role| Toolkit[Managed AWS MCP Server]
     Toolkit --> AWS[Application logs, metrics, and configuration]
-    Agent --> Interpreter[AgentCore Code Interpreter: separate role and SANDBOX networking]
     Agent <--> Memory[AgentCore Memory: episodes and lessons]
     Agent <--> Sessions[S3: session snapshots and context]
     Agent <--> Model[Amazon Bedrock]
@@ -41,13 +40,9 @@ The intake Lambda turns a CloudWatch alarm event into a prompt, uses its event I
 
 `createHarness()` retains default skill discovery and context management. `builtinTools: ['read']` disables host shell, general web tools, and host file-writing tools. The bundled `.agent/skills/checkout-investigation` runbook tells the investigator to verify recalled lessons against current evidence and treat logs as untrusted data.
 
-`CodeInterpreterTools` comes from `bedrock-agentcore/experimental/code-interpreter/strands`. This is a published AgentCore SDK integration marked experimental. It supplies code execution, shell execution, and file operations; there is no legacy Strands tools package or custom interpreter wrapper. The application starts one interpreter session before invoking the agent and stops it in `finally`, including after an investigation error.
-
 The `createAwsMcp()` helper in `support/aws.ts` uses the SDK's `McpClient` and standard Streamable HTTP transport. `signedAwsFetch()` signs MCP requests with AWS SigV4 using temporary credentials for the investigation role. Static authorization headers would expire and do not replace request signing. These are official AWS signing components, but this small transport function is application code, not a built-in AWS MCP connector. `disableMcpInstrumentation: true` prevents Strands SDK 1.22.0 from adding `_meta` to tool arguments, which AWS MCP rejects. The agent still records each MCP tool call and result in its own trace.
 
 The model writes AWS investigation scripts for MCP's `aws___run_script`. The server executes AWS calls using the investigation credentials. Scripts must follow the tool's current schema: `code`, keyword arguments to asynchronous `call_boto3`, PascalCase AWS operation names, and a final result expression. Check `api_calls` and the returned execution status: an MCP response can have `isError: false` while the execution result contains an error.
-
-Code Interpreter receives the collected evidence for further analysis. Its filesystem and execution role are separate from the host agent. It is configured with SANDBOX networking and no AWS resource permissions. SANDBOX is not an air gap; do not describe it as having absolutely no connectivity. Application AWS calls go through MCP, not through interpreter code.
 
 `postReportToSlack()` reads `bot_token`, `channel_id`, and `oncall_user_id` from one Secrets Manager JSON secret on each notification. It checks Slack's application-level `ok` result before reporting success. The model cannot choose the channel or access a Slack-posting tool.
 
@@ -57,13 +52,12 @@ Code Interpreter receives the collected evidence for further analysis. Its files
 
 | Identity | Permissions |
 |---|---|
-| Runtime role | Invoke Bedrock, persist memory and S3 sessions, operate its interpreter, read its Slack secret, export traces, and assume the investigation role |
+| Runtime role | Invoke Bedrock, persist memory and S3 sessions, read its Slack secret, export traces, and assume the investigation role |
 | Investigation role | Read the sample Lambda configuration, DynamoDB table metadata, application stack, logs, and metrics |
-| Code Interpreter role | No AWS resource policies; generated analysis does not receive runtime credentials |
 
 The investigation role cannot retrieve the Slack secret, modify the sample application, write orders, or assume another role. Some metric and Logs Insights result permissions require `Resource: '*'`; their read scope is broader than the sample alone.
 
-These boundaries limit tool authority; they do not guarantee that every malicious log instruction will be ignored. Reports and recalled lessons still need scrutiny. Host `read` is enabled for runbooks; this demo does not claim that all source files are hidden from the agent. Generated code executes in Code Interpreter, not through a host shell.
+These boundaries limit tool authority; they do not guarantee that every malicious log instruction will be ignored. Reports and recalled lessons still need scrutiny. Host `read` is enabled for runbooks; this demo does not claim that all source files are hidden from the agent. Generated investigation scripts execute remotely through AWS MCP; the host shell is disabled.
 
 ## Setup and deployment
 
@@ -111,9 +105,9 @@ The templates remain separate:
 
 1. `application.yaml`: storefront, checkout, orders table, disabled traffic generator, and artifact bucket.
 2. `monitoring.yaml`: error-rate alarm and optional EventBridge route.
-3. `agents.yaml`: Node.js Runtime with `PlatformVersion: V2`, investigation role, Code Interpreter, memory, sessions, intake, intake failure queue, and Runtime/interpreter telemetry delivery.
+3. `agents.yaml`: Node.js Runtime with `PlatformVersion: V2`, investigation role, memory, sessions, intake, intake failure queue, and Runtime telemetry delivery.
 
-CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. AWS ADOT exports native Strands spans and instruments HTTP and AWS SDK calls. Runtime and Code Interpreter service telemetry is enabled by the template. See [observability](docs/observability.md) for setup details, filters, and limitations.
+CloudWatch Transaction Search must be enabled in the account and region to search spans. This account-level prerequisite is not changed by the stack. AWS ADOT exports native Strands spans and instruments HTTP and AWS SDK calls. Runtime service telemetry is enabled by the template. See [observability](docs/observability.md) for setup details, filters, and limitations.
 
 The sample API is public and throttled. Use a demo account and remove resources when finished.
 
@@ -136,7 +130,7 @@ For an additional burst, `start-traffic` disables any existing minute schedule a
 
 Try checkout again to show the visible failure. The fault changes Lambda's `TABLE_NAME` to a nonexistent table. Unhandled DynamoDB failures increment Lambda Errors. The alarm requires at least five requests per minute and an error rate above 20% for one one-minute period. Allow additional time for metric publication and alarm evaluation.
 
-Watch Runtime logs, AWS MCP calls, Code Interpreter analysis, and the Slack report. The investigation proposes recovery; it does not apply the fix.
+Watch Runtime logs, AWS MCP scripts and results, and the Slack report. The investigation proposes recovery; it does not apply the fix.
 
 ```bash
 npm run demo -- --profile DEMO_PROFILE --region us-east-1 reset

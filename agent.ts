@@ -2,7 +2,6 @@ import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-sec
 import { createHarness } from '@strands-agents/harness'
 import { SessionManager } from '@strands-agents/sdk'
 import { S3Storage } from '@strands-agents/sdk/storage'
-import { CodeInterpreterTools } from 'bedrock-agentcore/experimental/code-interpreter/strands'
 import { AgentCoreMemoryStore } from 'bedrock-agentcore/memory/strands'
 import { BedrockAgentCoreApp } from 'bedrock-agentcore/runtime'
 import { dirname } from 'node:path'
@@ -44,10 +43,6 @@ async function investigate(incident: Incident) {
   console.log(JSON.stringify({ incident_id: incidentId, stage: 'investigating' }))
   const aws = createAwsMcp({ region, roleArn: env.INVESTIGATION_ROLE_ARN! })
 
-  const interpreter = new CodeInterpreterTools({
-    region, identifier: env.CODE_INTERPRETER_ID!,
-  })
-
   const storage = new S3Storage(env.SESSION_BUCKET!, { prefix: `sessions/${incidentId}`, region })
 
   const memory = new AgentCoreMemoryStore({
@@ -56,36 +51,30 @@ async function investigate(incident: Incident) {
     writable: true, extraction: true, region,
   })
 
-  try {
-    await interpreter.startSession(incidentId)
+  await using agent = await createHarness({
+    model: 'bedrock/us.anthropic.claude-sonnet-5-5',
+    name: 'haunted-investigator',
+    instructions: [
+      `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
+      `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
+      `Application stack: ${env.APP_STACK}.`,
+      `Host runbook directory: ${process.cwd()}/.agent/skills/checkout-investigation. Use read with absolute paths there.`,
+      'Load checkout-investigation before working. Use AWS Toolkit to collect AWS evidence.',
+      'Use AWS MCP for remote investigation scripts and analysis. Return Slack mrkdwn.',
+    ].join(' '),
+    builtinTools: ['read'],
+    tools: [aws],
+    memory: { stores: [memory] },
+    session: new SessionManager({ sessionId: incidentId, storage }),
+    storage,
+  })
 
-    await using agent = await createHarness({
-      model: 'bedrock/us.anthropic.claude-sonnet-5-5',
-      name: 'haunted-investigator',
-      instructions: [
-        `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,
-        `Lambda: ${env.APP_FUNCTION}. Log group: ${env.APP_LOG_GROUP}.`,
-        `Application stack: ${env.APP_STACK}.`,
-        `Host runbook directory: ${process.cwd()}/.agent/skills/checkout-investigation. Use read with absolute paths there; Code Interpreter has a separate filesystem.`,
-        'Load checkout-investigation before working. Use AWS Toolkit to collect AWS evidence.',
-        'Run generated analysis code and shell commands in Code Interpreter. Return Slack mrkdwn.',
-      ].join(' '),
-      builtinTools: ['read'],
-      tools: [aws, ...interpreter.tools],
-      memory: { stores: [memory] },
-      session: new SessionManager({ sessionId: incidentId, storage }),
-      storage,
-    })
+  const report = String(await agent.invoke(incident.prompt))
 
-    const report = String(await agent.invoke(incident.prompt))
+  if (incident.notify) await postReportToSlack(incidentId, report)
+  console.log(JSON.stringify({ incident_id: incidentId, stage: 'completed' }))
+  return { incident_id: incidentId, report }
 
-    if (incident.notify) await postReportToSlack(incidentId, report)
-    console.log(JSON.stringify({ incident_id: incidentId, stage: 'completed' }))
-    return { incident_id: incidentId, report }
-
-  } finally {
-    await interpreter.stopSession()
-  }
 }
 
 const app = new BedrockAgentCoreApp({

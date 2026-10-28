@@ -16,62 +16,11 @@ Parameters:
     Type: String
     Description: ARN of the JSON secret containing bot_token, channel_id, and oncall_user_id.
 Resources:
-  InterpreterRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: bedrock-agentcore.amazonaws.com
-            Action: sts:AssumeRole
-  Interpreter:
-    Type: AWS::BedrockAgentCore::CodeInterpreterCustom
-    Properties:
-      Name: !Sub ${NamePrefix}_analysis
-      ExecutionRoleArn: !GetAtt InterpreterRole.Arn
-      NetworkConfiguration:
-        NetworkMode: SANDBOX
   TraceDestination:
     Type: AWS::Logs::DeliveryDestination
     Properties:
       Name: !Sub ${NamePrefix}-traces
       DeliveryDestinationType: XRAY
-  InterpreterTraceSource:
-    Type: AWS::Logs::DeliverySource
-    Properties:
-      Name: !Sub ${NamePrefix}-interpreter-traces
-      ResourceArn: !GetAtt Interpreter.CodeInterpreterArn
-      LogType: TRACES
-  InterpreterTraceDelivery:
-    Type: AWS::Logs::Delivery
-    Properties:
-      DeliverySourceName: !Ref InterpreterTraceSource
-      DeliveryDestinationArn: !GetAtt TraceDestination.Arn
-  InterpreterLogs:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/bedrock-agentcore/${NamePrefix}/code-interpreter
-      RetentionInDays: 14
-  InterpreterLogSource:
-    Type: AWS::Logs::DeliverySource
-    Properties:
-      Name: !Sub ${NamePrefix}-interpreter-logs
-      ResourceArn: !GetAtt Interpreter.CodeInterpreterArn
-      LogType: APPLICATION_LOGS
-  InterpreterLogDestination:
-    Type: AWS::Logs::DeliveryDestination
-    Properties:
-      Name: !Sub ${NamePrefix}-interpreter-logs
-      DeliveryDestinationType: CWL
-      DestinationResourceArn: !GetAtt InterpreterLogs.Arn
-      OutputFormat: json
-  InterpreterLogDelivery:
-    Type: AWS::Logs::Delivery
-    Properties:
-      DeliverySourceName: !Ref InterpreterLogSource
-      DeliveryDestinationArn: !GetAtt InterpreterLogDestination.Arn
   Sessions:
     Type: AWS::S3::Bucket
     Properties:
@@ -159,13 +108,6 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Ref SlackSecretArn
-              - Effect: Allow
-                Action:
-                  - bedrock-agentcore:StartCodeInterpreterSession
-                  - bedrock-agentcore:InvokeCodeInterpreter
-                  - bedrock-agentcore:StopCodeInterpreterSession
-                  - bedrock-agentcore:GetCodeInterpreterSession
-                Resource: !GetAtt Interpreter.CodeInterpreterArn
   InvestigationRole:
     Type: AWS::IAM::Role
     Properties:
@@ -262,7 +204,6 @@ Resources:
         OTEL_PROPAGATORS: baggage,xray,tracecontext
         OTEL_SEMCONV_STABILITY_OPT_IN: gen_ai_latest_experimental,gen_ai_span_attributes_only
         MODEL_ID: !Ref ModelId
-        CODE_INTERPRETER_ID: !GetAtt Interpreter.CodeInterpreterId
         INVESTIGATION_ROLE_ARN: !GetAtt InvestigationRole.Arn
         MEMORY_ID: !GetAtt Memory.MemoryId
         SERVICE_ID: !Sub ${NamePrefix}_checkout

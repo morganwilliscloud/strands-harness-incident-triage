@@ -15,7 +15,7 @@ The [countdown video](countdown/trick-or-trace-countdown.mp4) counts from 30 to 
 | 03 — Strands agent loop | Explain how the model and tools work together | [PNG](png/03-strands-loop.png) · [SVG](svg/03-strands-loop.svg) |
 | 04 — harness defaults | Introduce the basic TypeScript example | [PNG](png/04-harness-defaults.png) · [SVG](svg/04-harness-defaults.svg) |
 | 05 — Runtime and memory | Distinguish the current incident from earlier lessons | [PNG](png/05-runtime-memory.png) · [SVG](svg/05-runtime-memory.svg) |
-| 06 — Runtime and Code Interpreter | Show where generated analysis code executes | [PNG](png/06-runtime-interpreter.png) · [SVG](svg/06-runtime-interpreter.svg) |
+| 06 — Runtime and AWS MCP | Show where generated analysis code executes | [PNG](png/06-runtime-interpreter.png) · [SVG](svg/06-runtime-interpreter.svg) |
 | 07 — AWS MCP and IAM | Explain temporary investigation credentials and permissions | [PNG](png/07-mcp-iam.png) · [SVG](svg/07-mcp-iam.svg) |
 | 08 — Skills, context, and memory | Explain how the agent receives the right information | [PNG](png/08-skills-context-memory.png) · [SVG](svg/08-skills-context-memory.svg) |
 | 09 — Observability | Transition into the live trace and report | [PNG](png/09-observability.png) · [SVG](svg/09-observability.svg) |

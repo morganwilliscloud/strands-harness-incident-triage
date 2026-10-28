@@ -12,11 +12,6 @@ CloudWatch Transaction Search provides the trace waterfall. AWS ADOT propagates 
 | `invoke_agent haunted-investigator` | Agent input/output and duration |
 | `chat` | Model messages and inference details |
 | `execute_tool aws___run_script` | Requested AWS script and returned evidence, including API-call outcomes |
-| `execute_tool executeCode` | Generated Python and returned output |
-| `execute_tool executeCommand` | Shell command executed in Code Interpreter and its output |
-| `execute_tool fileOperations` | File operation and result |
-| `BedrockAgentCore.InvokeCodeInterpreter` | The automatically instrumented AWS SDK call |
-| `AgentCore.BuiltinTools.InvokeCodeInterpreter` | The linked Code Interpreter service operation, request ID, session ID, and status |
 
 Tool spans expose `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result`. Tool success alone does not prove every nested AWS operation succeeded: inspect the returned MCP execution status and `api_calls`.
 
@@ -36,9 +31,15 @@ fields @timestamp, name, spanId, parentSpanId, @message
 | sort @timestamp asc
 ```
 
-Code Interpreter application logs are in `/aws/vendedlogs/bedrock-agentcore/haunted/code-interpreter` with 14-day retention. They include request payloads and identifiers for correlation. The code's returned stdout/results are also captured in the agent tool span. Runtime console logs are in `/aws/bedrock-agentcore/runtimes/haunted_investigator-TQ1U0Z6CxF-DEFAULT` for this deployment.
+Runtime console logs are in `/aws/bedrock-agentcore/runtimes/haunted_investigator-TQ1U0Z6CxF-DEFAULT` for this deployment. AWS MCP scripts and results appear in the agent tool spans; this does not expose the managed MCP service's internal execution trace.
 
-## Verified rehearsal to explore
+## Current deployment verification
+
+Runtime revision 14 uses AWS MCP without Code Interpreter. Trace `6ae164e75a60d44851d4331d0e5a1e3d`, incident `cdbb77c8-4eb5-4713-a28e-f775c7e25075`, at approximately October 28, 2026, 02:59 UTC (October 27, 10:59 p.m. Eastern), contains the read-only deployment check. The AWS MCP result records a successful `GetMetricData` call with no datapoints in the requested window. This check did not send Slack or reset memory.
+
+## Verified rehearsals before Code Interpreter removal
+
+These historical traces retain interpreter session/service spans from earlier versions. The current agent exposes only AWS MCP and the host runbook reader; it creates no Code Interpreter session.
 
 For the full alarm-triggered investigation with cleared memory and no fault-specific runbook hints, open trace `6ae15f265bcb2165302cc67717f3c7d1`, incident `77f6f10d-fa76-29e2-0859-50f97a67e3f1`, on October 28, 2026, 02:34–02:36 UTC (October 27, 10:34–10:36 p.m. Eastern). It contains 73 linked spans and seven agent loop cycles. The memory search returned no records. Four AWS MCP calls discovered the bad table configuration from live evidence, and the report was posted to Slack. One script failed on timestamp parsing and was corrected in the next call. The agent chose not to execute Code Interpreter tools; its session-start/stop spans do not mean analysis code ran there.
 
@@ -54,17 +55,17 @@ The deployment installs `@aws/aws-distro-opentelemetry-node-autoinstrumentation@
 
 The startup file has two lines: load ADOT, then set `OTEL_TRACES_EXPORTER=none` for harness. ADOT reads the initial `otlp` setting and configures its exporter before that change. The second line prevents harness 0.3.1 from trying to register a second provider. It does not shut down ADOT. There is no custom exporter, trace provider, request handler, or manual flush in the agent.
 
-The template enables only `http`, `aws-sdk`, and `undici` instrumentation and selects `baggage,xray,tracecontext` propagators. `OTEL_SEMCONV_STABILITY_OPT_IN` retains GenAI input/output attributes for the walkthrough. Additional ADOT log/metric exporters are disabled; Runtime console logs, Code Interpreter application logs, and AWS service metrics use their existing platform deliveries.
+The template enables only `http`, `aws-sdk`, and `undici` instrumentation and selects `baggage,xray,tracecontext` propagators. `OTEL_SEMCONV_STABILITY_OPT_IN` retains GenAI input/output attributes for the walkthrough. Additional ADOT log/metric exporters are disabled; Runtime console logs and AWS service metrics use their existing platform deliveries.
 
-`OTEL_TRACES_SAMPLER=always_on` records every investigation for this low-volume demo, including invocations whose incoming trace is marked unsampled. ADOT's default parent-based sampler honors that incoming decision, which can leave Runtime and Code Interpreter service spans visible while omitting the agent/model/tool spans. CloudWatch Transaction Search's indexing percentage cannot recover spans the application never exported. Sampling every invocation increases telemetry volume; choose an appropriate sampling policy for production.
+`OTEL_TRACES_SAMPLER=always_on` records every investigation for this low-volume demo, including invocations whose incoming trace is marked unsampled. ADOT's default parent-based sampler honors that incoming decision, which can leave Runtime service spans visible while omitting the agent/model/tool spans. CloudWatch Transaction Search's indexing percentage cannot recover spans the application never exported. Sampling every invocation increases telemetry volume; choose an appropriate sampling policy for production.
 
-The stack configures Runtime and Code Interpreter trace delivery, plus Code Interpreter application-log delivery. The Runtime role retains `xray:PutTraceSegments`. CloudWatch Transaction Search and its sampling settings are account-level prerequisites; they were already enabled in this account and were not changed.
+The stack configures Runtime trace delivery. The Runtime role retains `xray:PutTraceSegments`. CloudWatch Transaction Search and its sampling settings are account-level prerequisites; they were already enabled in this account and were not changed.
 
 Strands SDK 1.22.0's MCP instrumentation places `_meta` inside tool arguments, causing AWS MCP schema validation errors. The supported `disableMcpInstrumentation` option disables that injection. Agent-side MCP tool spans remain enabled; this does not expose AWS MCP's internal sandbox trace.
 
 ## Boundaries and dependency status
 
-This captures agent and tool execution, not an operating-system audit of every instruction inside the interpreter. The application starts one interpreter session explicitly before invoking the agent, avoiding a race when the SDK lazily starts sessions for concurrent first tool calls.
+This captures agent and tool execution. Inspect the returned AWS MCP script status and API-call outcomes; a successful tool span alone does not establish that the script succeeded.
 
 Inputs, generated code, retrieved evidence, and outputs are telemetry data. People with access to these logs/traces can read them. The Slack token stays in the application posting function rather than in model/tool arguments.
 
@@ -74,4 +75,3 @@ Official references:
 
 - [AWS ADOT JavaScript agent-observability configuration](https://github.com/aws-observability/aws-otel-js-instrumentation#generative-ai)
 - [AgentCore observability configuration](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html)
-- [Code Interpreter observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-observability.html)

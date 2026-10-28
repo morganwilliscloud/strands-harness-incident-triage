@@ -1,5 +1,14 @@
 # Validation
 
+## October 28, 2026 — Remove Code Interpreter
+
+- Removed the interpreter import, tool registration, session startup/shutdown, and cleanup block from `agent.ts`. AWS MCP is the only remote investigation tool; the built-in host reader remains available for runbooks. The AgentCore SDK dependency remains necessary for Runtime and Memory.
+- Removed the custom interpreter, its execution role, Runtime permissions/environment variable, and interpreter telemetry deliveries from the CloudFormation template and deployed stack. Runtime revision 14 and DEFAULT are READY; the stack is UPDATE_COMPLETE. The former interpreter log group was retained outside stack management with its existing 14-day retention to preserve rehearsal history.
+- Updated the runbook, README, demo commands, run of show, observability guide, and architecture/execution graphics. Historical validation entries and traces still describe earlier deployments. The existing `06-runtime-interpreter` graphic filename is retained for presenter bookmarks, but its content now explains Runtime and AWS MCP.
+- Type checking, compilation, Linux ARM64 packaging, CloudFormation validation, and visual layout checks passed. Inspected the deployed Runtime environment and role policy: neither contains Code Interpreter configuration or permissions.
+- Hosted verification `cdbb77c8-4eb5-4713-a28e-f775c7e25075` completed through AWS MCP. Its persisted tool result records a successful CloudWatch `GetMetricData` call for Errors and Invocations; the 02:44–02:59 UTC window returned no datapoints. The agent correctly distinguished missing observations from zero errors. Trace: `6ae164e75a60d44851d4331d0e5a1e3d`.
+- This was a bounded integration check with `notify=false`, not another fresh incident diagnosis. Existing memory was available, no application fault was changed, and no Slack message was sent.
+
 ## October 28, 2026 — Fresh alarm investigation without prior lessons
 
 - Removed the expected table name from agent instructions and Runtime environment, the table-comparison hint and preclassified warning from the architecture reference, and the prescribed Code Interpreter calculations from the runbook. The agent retains service topology, resource identifiers, evidence/reporting guidance, and execution boundaries.

@@ -22,13 +22,13 @@ Use while the basic TypeScript example is visible. Defaults verified against har
 
 Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.
 
-## 06-runtime-interpreter: Runtime and Code Interpreter boundaries
+## 06-runtime-interpreter: Runtime and AWS MCP execution
 
-CodeInterpreterTools is the published AgentCore TypeScript integration. The Runtime process starts one interpreter session and closes it in finally. It sends selected code/data via service APIs and receives results. The interpreter role has no app-resource policies in this template. SANDBOX networking is not an absolute air gap. The Runtime itself has PUBLIC networking. Generated code running on the host would have a different access boundary; this demo disables the host shell.
+The model generates Python tool arguments. Strands sends them over signed Streamable HTTP to the managed AWS MCP endpoint. AWS MCP executes the script remotely and returns evidence or an error. The application assumes the scoped investigation role to sign requests. No local STDIO server or host shell executes these investigation scripts. The underlying managed sandbox compute technology is not asserted here. This replaces the former interpreter diagram; its existing filename is retained for presenter bookmarks.
 
 ## 07-mcp-iam: AWS MCP and the investigation role
 
-Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. Do not label AWS MCP as our Code Interpreter instance or draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.
+Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. AWS MCP executes remotely; do not draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.
 
 ## 08-skills-context-memory: Skills, working context, and long-term memory
 
@@ -36,4 +36,4 @@ Use the runbook at .agent/skills/checkout-investigation as the concrete skill. A
 
 ## 09-observability: Inspect the investigation in observability
 
-Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP nested API results, Code Interpreter code/results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.
+Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP scripts and nested API results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.
