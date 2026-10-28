@@ -52,7 +52,7 @@ async function investigate(incident: Incident) {
   })
 
   await using agent = await createHarness({
-    model: 'bedrock/us.anthropic.claude-sonnet-5-5',
+    model: env.MODEL_ID!,
     name: 'haunted-investigator',
     instructions: [
       `Investigate ${env.SERVICE_ID} in ${region}. Incident: ${incidentId}.`,

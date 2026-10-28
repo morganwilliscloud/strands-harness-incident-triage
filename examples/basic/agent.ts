@@ -1,7 +1,7 @@
 import { createHarness } from '@strands-agents/harness'
 
 await using agent = await createHarness({
-  model: 'bedrock/us.anthropic.claude-sonnet-5-5',
+  model: process.env.MODEL_ID || 'bedrock/us.anthropic.claude-sonnet-5-5',
 })
 
 await agent.invoke(

@@ -38,6 +38,7 @@ function icon(name,x,y,c=C.green,s=1){const shapes={
  cloud:'<path d="M12 48H56C78 48 78 20 58 20C50-3 20 1 17 23C-2 19-7 48 12 48Z"/>',
  alarm:'<path d="M18 50V24C18 4 52 4 52 24V50L60 58H10L18 50ZM28 67H42"/>',
  route:'<path d="M6 12H30V35H62M30 35V60H62M51 25L62 35L51 45M51 50L62 60L51 70"/>',
+ loop:'<path d="M60 25A26 26 0 0 0 13 19M60 25V9M60 25H44M12 47A26 26 0 0 0 59 53M12 47V63M12 47H28"/>',
  lambda:'<path d="M13 10H30L56 62H70M31 24L10 62"/>',
  file:'<path d="M10 2H44L62 20V70H10ZM44 2V20H62M22 34H49M22 46H49M22 58H42"/>',
  book:'<path d="M35 14C20 5 5 8 3 12V62C14 55 25 56 35 63C46 56 59 55 69 62V12C58 6 44 7 35 14ZM35 14V63"/>',
@@ -83,7 +84,7 @@ s=base('AWS incident response agent architecture','')
 const top=[['Candy storefront',['Amazon API Gateway','AWS Lambda','Amazon DynamoDB'],'box'],['Amazon CloudWatch',['Alarm: checkout errors','cross the threshold.'],'alarm'],['Amazon EventBridge',['Routes the alarm','state-change event.'],'route'],['AWS Lambda',['Intake: builds the prompt','and invokes the agent.'],'lambda']]
 for(let i=0;i<4;i++){let x=80+i*450,c=i===1?C.red:C.yellow;s+=rect(x,292,410,182)+icon(top[i][2],x+24,314,c,.65)+text(x+88,346,top[i][0],25,C.white,'mono',600);for(let j=0;j<top[i][1].length;j++)s+=text(x+26,389+j*32,top[i][1][j],25,C.muted);if(i<3)s+=arrow([[x+412,383],[x+442,383]],C.yellow,2)}
 s+=arrow([[1635,476],[1635,521],[954,521],[954,584]],C.yellow)
-s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'Amazon Bedrock AgentCore Runtime',23,C.blue,'mono',600)+text(596,694,'Strands harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,635,145)
+s+=rect(560,586,790,230,'#0b2514',C.green,32)+text(596,632,'Amazon Bedrock AgentCore Runtime',23,C.blue,'mono',600)+text(596,694,'Strands harness',43,C.white,'mono',600)+text(596,747,'Investigate → analyze → report',29,C.pale)+frog(1150,655,145,C.green,true)
 s+=rect(80,585,390,255,C.card,C.green,24)+icon('cloud',104,607,C.green,.65)+text(168,639,'AWS MCP Server',28,C.white,'mono',600)+wrap(106,695,'Runs Python remotely. Reads logs, metrics and configuration. Returns evidence.',338,28)
 s+=arrow([[560,669],[478,669]],C.green)+arrow([[478,716],[551,716]],C.green)
 s+=smallCard(1450,622,390,182,'Slack report','Findings + next steps + on-call mention.',C.pink,'chat')+arrow([[1352,704],[1441,704]],C.pink)
@@ -104,27 +105,46 @@ s+=frog(880,530,160,C.green,true)+text(960,738,'STRANDS AGENT',24,C.green,'mono'
 
 await save(current,s,'The Strands agent loop','The model chooses a tool; Strands executes it and feeds back the result. The loop can continue through several tools or finish with an answer. This is a conceptual loop, not a separate deployment architecture. Reasoning does not require displaying private model reasoning.')
 
+current='03b-what-is-a-harness'
+s=base('Agent = Model + Harness','')
+s+=rect(80,292,454,578,'#101826',C.blue,32)+text(116,354,'MODEL',31,C.blue,'mono',600)+icon('model',257,402,C.blue,1.1)
+s+=text(116,564,'Interprets the task.',32,C.white)+text(116,624,'Chooses tools.',32,C.white)+text(116,684,'Uses the results.',32,C.white)+text(116,744,'Generates an answer.',32,C.white)
+s+=text(582,611,'+',60,C.white,'mono',600,'middle')
+s+=rect(630,292,1210,578,'#0b2514',C.green,32)+text(664,350,'HARNESS',31,C.green,'mono',600)
+const harnessParts=[
+ ['Agent loop','Call the model, return results, continue or finish.','loop',C.green],
+ ['Tool execution','Run selected tools and return their output.','tool',C.yellow],
+ ['Context management','Assemble, retrieve, offload and compact context.','file',C.blue],
+ ['Sessions + memory','Resume work and recall information across runs.','memory',C.pink],
+ ['Instructions + skills','Supply guidance and load relevant procedures.','book',C.green],
+ ['Hooks + controls','Add checks, approvals and activity logging.','shield',C.orange]
+]
+for(let i=0;i<harnessParts.length;i++){
+ const [title,body,ic,color]=harnessParts[i],x=654+(i%2)*582,y=378+Math.floor(i/2)*158
+ s+=rect(x,y,558,148,C.card,C.line,24)+icon(ic,x+24,y+18,color,.65)+text(x+88,y+50,title,28,C.white,'mono',600)+wrap(x+26,y+96,body,506,27,C.muted,'body',500,1.25)
+}
+await save(current,s,'Agent = Model + Harness','Bridge from the agent loop to the configured Strands product. Say: “The model chooses a tool call, but software has to execute it, return the result, and make the next model call. That software is the harness. It also manages the information and state the model needs as work continues. Strands harness assembles those pieces with defaults we can customize.” Agent = Model + Harness is a useful system-design framing, explicitly used by LangChain, rather than a formal universal definition. The six boxes group common harness responsibilities; they are not a claim that every harness ships every feature. Hooks are extension points where developers can implement logging, checks or approvals; their presence alone is not an enforced security boundary or an automatic approval workflow. The next graphic describes this demo’s installed Strands defaults. Research: LangChain, The Anatomy of an Agent Harness (2026-03-10); Anthropic, Effective harnesses for long-running agents (2025-11-26); current Strands harness documentation. See SOURCES.md.')
+
 current='04-harness-defaults'
 s=base('The agent, already equipped.','createHarness() assembles the defaults. You choose what to change.')
 s+=rect(662,395,597,449,'#0b2514',C.green,32)+frog(875,489,180,C.green,true)+text(960,720,'createHarness()',34,C.white,'mono',600,'middle')+text(960,775,'A configured Strands agent',28,C.pale,'body',500,'middle')
-const cards=[['Built-in tools','Shell and file tools, ready for the model to use.','tool',C.yellow],['Context management','Offload large results. Retrieve details. Compact context.','file',C.blue],['Local sessions','Save conversation snapshots; resume with a session ID.','box',C.pink],['Long-term memory','Extract useful facts and retrieve them in later sessions.','memory',C.pink],['Skills','Discover runbooks and load procedures when relevant.','book',C.green],['Default output','See generated text and tool activity in the console.','terminal',C.yellow]]
+const cards=[['Built-in tools','Shell and file tools, ready for the model to use.','tool',C.yellow],['Context management','Offload large results. Retrieve details. Compact context.','file',C.blue],['Session storage','Save conversation snapshots; resume with a session ID.','box',C.pink],['Long-term memory','Extract useful facts and retrieve them in later sessions.','memory',C.pink],['Skills','Discover runbooks and load procedures when relevant.','book',C.green],['Default output','See generated text and tool activity in the console.','terminal',C.yellow]]
 for(let i=0;i<6;i++){const right=i>=3,j=i%3,x=right?1340:80,y=292+j*224;s+=smallCard(x,y,500,185,cards[i][0],cards[i][1],cards[i][3],cards[i][2]);s+=line(right?1259:580,right?620:y+93,right?1340:662,right?y+93:620,C.line,2)}
 await save(current,s,'What harness gives you','Use while the basic TypeScript example is visible. Defaults verified against harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.')
 
 current='05-runtime-memory'
-s=base('Remember the incident. Learn for next time.','This demo uses two stores, with two different jobs.')
-s+=rect(80,336,650,523,'#101826',C.blue,32)+text(118,387,'AGENTCORE RUNTIME',25,C.blue,'mono',600)+rect(120,429,570,277,'#0b2514',C.green,24)+frog(535,495,125,C.green,true)+text(155,485,'Strands harness',33,C.white,'mono',600)+text(155,557,'Incident A',30,C.white,'mono')+text(155,613,'investigate → report',27,C.pale)+text(118,778,'Same service identity.',31,C.white)+text(118,825,'New session for each incident.',29,C.muted)
-s+=rect(1070,292,770,242,C.card,C.pink,24)+icon('box',1100,325,C.pink,.7)+text(1172,360,'S3 session snapshots',34,C.white,'mono',600)+text(1100,423,'“What have we done in this incident?”',31,C.white)+text(1100,477,'Conversation and state for follow-up questions.',27,C.muted)
+s=base('Remember the incident. Learn for next time.','')
+s+=rect(80,336,650,523,'#101826',C.blue,32)+text(118,387,'AGENTCORE RUNTIME',25,C.blue,'mono',600)+rect(120,429,570,370,'#0b2514',C.green,24)+frog(535,551,125,C.green,true)+text(155,552,'Incident Response',30,C.white,'mono',600)+text(155,599,'Agent',30,C.white,'mono',600)+text(155,660,'powered by',27,C.pale)+text(155,706,'Strands harness',30,C.white,'mono',600)
+s+=rect(1070,292,770,242,C.card,C.pink,24)+icon('box',1100,325,C.pink,.7)+text(1172,360,'S3 session snapshots',34,C.white,'mono',600)+text(1100,423,'“What have we done in this incident?”',31,C.white)+text(1100,477,'Saved conversation and state from this incident.',27,C.muted)
 s+=rect(1070,649,770,272,C.card,C.pink,24)+icon('memory',1100,682,C.pink,.7)+text(1172,717,'AgentCore Memory',34,C.white,'mono',600)+text(1100,780,'“What helped in previous incidents?”',31,C.white)+text(1100,832,'Events → asynchronous extraction → lessons',27,C.muted)+text(1100,882,'Retrieve a lesson; verify it against current evidence.',26,C.pink)
 s+=arrow([[730,469],[1060,469]],C.pink)+arrow([[1060,506],[740,506]],C.pink)+text(900,437,'save / restore',24,C.pink,'mono',500,'middle')
 s+=arrow([[730,744],[1060,744]],C.pink)+arrow([[1060,781],[740,781]],C.pink)+text(900,709,'events / recall',24,C.pink,'mono',500,'middle')
-s+=text(80,952,'S3 is this demo’s snapshot backend; AgentCore Memory also has short-term event storage.',26,C.muted)
 await save(current,s,'harness on Runtime with sessions and memory','Runtime hosts the process; it is not the durable memory store. Our current TypeScript integration uses SessionManager and S3Storage for snapshots, and AgentCoreMemoryStore for lessons. This is a demo integration choice, not a claim that AgentCore lacks short-term memory. Extraction is asynchronous. A confirmed engineer outcome is stronger evidence for a future lesson than the agent’s initial hypothesis.')
 
 current='06-runtime-interpreter'
-s=base('The agent coordinates. AWS MCP executes.','Generated investigation scripts run remotely in the managed AWS MCP service.')
-s+=rect(80,300,765,620,'#101826',C.blue,32)+text(120,358,'AGENTCORE RUNTIME',30,C.blue,'mono',600)+rect(120,407,685,228,'#0b2514',C.green,24)+frog(607,459,154,C.green,true)+text(153,467,'Strands harness',38,C.white,'mono',600)+text(153,528,'Model calls + tool coordination',28,C.pale)+text(153,582,'Packaged source + runbook',28,C.pale)
-s+=icon('key',122,674,C.blue,.66)+text(190,711,'Runtime execution role',29,C.white,'mono',600)+wrap(121,768,'Model, sessions, memory, Slack secret and STS AssumeRole.',674,28)+pill(121,853,372,'HOST SHELL DISABLED',C.blue,23)
+s=base('The agent coordinates. AWS MCP executes.','')
+s+=rect(80,300,765,620,'#101826',C.blue,32)+text(120,358,'AGENTCORE RUNTIME',30,C.blue,'mono',600)+rect(120,407,685,228,'#0b2514',C.green,24)+frog(607,459,154,C.green,true)+text(153,471,'Incident Response Agent',30,C.white,'mono',600)+text(153,529,'powered by',27,C.pale)+text(153,581,'Strands harness',32,C.white,'mono',600)
+s+=icon('key',122,674,C.blue,.66)+text(190,711,'Runtime execution role',29,C.white,'mono',600)
 s+=rect(1075,300,765,620,'#0b2514',C.green,32)+text(1115,358,'MANAGED AWS MCP',30,C.green,'mono',600)+rect(1115,407,685,228,'#101010',C.line,24)
 s+=text(1149,459,'aws___run_script',30,C.green,'mono',600)+text(1149,518,'Collect logs and metrics.',29,C.white)+text(1149,571,'Inspect resource configuration.',29,C.white)+text(1149,614,'Compute and return evidence.',27,C.muted)
 s+=icon('key',1117,674,C.green,.66)+text(1185,711,'Investigation identity',29,C.white,'mono',600)+text(1115,768,'AWS operations follow the scoped role.',27,C.muted)+text(1115,810,'Script results return to the model.',27,C.muted)+pill(1115,853,363,'REMOTE EXECUTION',C.green,23)
@@ -132,7 +152,7 @@ s+=arrow([[845,499],[1063,499]],C.green)+text(960,449,'signed HTTPS',21,C.green,
 await save(current,s,'Runtime and AWS MCP execution','The model generates Python tool arguments. Strands sends them over signed Streamable HTTP to the managed AWS MCP endpoint. AWS MCP executes the script remotely and returns evidence or an error. The application assumes the scoped investigation role to sign requests. No local STDIO server or host shell executes these investigation scripts. The underlying managed sandbox compute technology is not asserted here. This replaces the former interpreter diagram; its existing filename is retained for presenter bookmarks.')
 
 current='07-mcp-iam'
-s=base('AWS access follows the credentials.','Our agent assumes the investigation role before it calls managed AWS MCP.')
+s=base('AWS access follows the credentials.','')
 const xs=[80,540,1000,1460],ws=[380,380,380,380]
 const cs=[C.blue,C.yellow,C.green,C.white]
 for(let i=0;i<4;i++){s+=rect(xs[i],334,ws[i],310,C.card,cs[i],24)+numbered(xs[i]+37,334,i+1,cs[i]);if(i<3)s+=arrow([[xs[i]+383,483],[xs[i+1]-10,483]],C.yellow)}
@@ -146,23 +166,15 @@ s+=rect(974,752,866,181,'#241013',C.red,24)+text(1009,805,'NOT GRANTED TO THE IN
 await save(current,s,'AWS MCP and the investigation role','Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. AWS MCP executes remotely; do not draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.')
 
 current='08-skills-context-memory'
-s=base('Instructions. Working state. Experience.','Three kinds of information that help the same agent make its next decision.')
-const names=['A RUNBOOK','THIS INVESTIGATION','PREVIOUS INCIDENTS'], colors=[C.green,C.blue,C.pink], titles=['Skills','Session + context','Long-term memory'], examples=['“Follow our checkout triage procedure.”','“We already checked the table name.”','“This failure was fixed by restoring config.”']
-for(let i=0;i<3;i++){const x=80+i*600,c=colors[i];s+=rect(x,319,560,558,C.card,c,32)+pill(x+28,346,504,names[i],c,23)+icon(['book','file','memory'][i],x+38,430,c,1.0)+frog(x+382,441,122,c,i===0)+text(x+34,568,titles[i],33,C.white,'mono',600)+wrap(x+34,630,examples[i],492,33,C.white)+line(x+34,737,x+526,737,c,2)}
-s+=text(114,791,'Packaged with the agent.',29,C.muted)+text(114,839,'Load the relevant procedure.',27,C.green)
-s+=text(714,791,'Keep and retrieve useful evidence.',27,C.muted)+text(714,839,'Offload or compact as needed.',27,C.blue)
-s+=text(1314,791,'Extract and recall useful lessons.',27,C.muted)+text(1314,839,'Check them against today’s facts.',27,C.pink)
-s+=text(960,951,'Logs are evidence to inspect, not instructions to obey.',34,C.white,'body',600,'middle')
-await save(current,s,'Skills, working context, and long-term memory','Use the runbook at .agent/skills/checkout-investigation as the concrete skill. A skill is authored procedure, session state records the current incident, and extracted memory carries earlier experience. Context management governs what stays in the model’s current window. Treat prompt-injection text in logs as untrusted evidence; this diagram states the intended workflow, not a guaranteed security property of a prompt.')
-
-current='09-observability'
-s=base('Watch the investigation unfold.','Use AgentCore observability to inspect actual tool inputs, outputs and timing.')
-s+=line(175,400,1745,400,C.green,5)
-const stages=[['Runtime','Request accepted','cloud'],['Model','Chooses a tool','model'],['AWS MCP','Runs the script','terminal'],['Model','Uses the evidence','model'],['Slack','Posts the report','chat']]
-for(let i=0;i<5;i++){const x=180+i*390,c=[C.blue,C.green,C.green,C.orange,C.pink][i];s+=`<circle cx="${x}" cy="400" r="65" fill="#080d09" stroke="${c}" stroke-width="3"/>`+icon(stages[i][2],x-29,370,c,.83)+text(x,515,stages[i][0],30,C.white,'mono',600,'middle')+text(x,566,stages[i][1],26,C.muted,'body',500,'middle')}
-s+=rect(80,649,1190,282,'#111713',C.green,24)+text(117,701,'ILLUSTRATIVE REPORT',24,C.green,'mono',600)+text(117,765,'Evidence: TABLE_NAME points to a missing table.',32,C.white)+text(117,824,'Recommendation: restore the expected table name.',29,C.white)+text(117,886,'The engineer applies the fix and verifies recovery.',29,C.muted)
-s+=frog(1530,743,158,C.green,true)+text(1604,940,'Show the tool result.',26,C.green,'mono',600,'middle')
-await save(current,s,'Inspect the investigation in observability','Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP scripts and nested API results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.')
+s=base('What gives the agent context?','')
+s+=frog(880,296,160,C.green,true)+text(960,502,'Incident response agent',32,C.white,'mono',600,'middle')
+const contextColors=[C.green,C.blue,C.pink],contextTitles=['Skills','Session storage','Long-term memory'],contextDescriptions=['Reusable instructions and procedures for specific tasks.','Saved messages, tool results, and state from an agent session.','Facts and lessons retained across sessions.']
+for(let i=0;i<3;i++){
+ const x=80+i*600,c=contextColors[i],center=x+280
+ s+=arrow([[960,532],[960,564],[center,564],[center,620]],c,3)
+ s+=rect(x,628,560,286,C.card,c,32)+icon(['book','file','memory'][i],x+30,660,c,.72)+text(x+104,700,contextTitles[i],31,C.white,'mono',600)+wrap(x+34,780,contextDescriptions[i],492,32,C.white)
+}
+await save(current,s,'What gives the agent context?','Skills contain reusable instructions and procedures. Session storage persists messages, tool results, and agent state so a session can be restored. Long-term memory retains facts and lessons across sessions. The downward arrows show possible context sources, not a claim that each investigation reads all three. During one invocation, the agent loop retains its working conversation and tool results; it does not need to restore a saved session to use an earlier result. This demo starts a fresh incident session and does not demonstrate a follow-up that restores its snapshot. S3 preserves those snapshots outside the runtime for later inspection or restoration. Local storage could simplify a disposable demo, but files in the current runtime configuration are ephemeral. The shared storage backend can also hold offloaded context; that is distinct from restoring a session snapshot. See SOURCES.md for storage and session documentation.')
 
 for(const [name,color,hat] of [['frog-wizard',C.green,true],['frog-green',C.green,false],['frog-pink',C.pink,false],['frog-pumpkin-orange',C.orange,true]]){
  current=name;let body=frog(152,316,720,color,hat);await save(name,body,name,'',[1024,1100],'overlays')
@@ -173,7 +185,7 @@ current='pixel-pumpkin';await save(current,pumpkin(20,20,8),'Pixel pumpkin','',[
 await sharp(path.join(root,'png/01-title.png')).resize(1280,720).png().toFile(path.join(root,'thumbnail.png'))
 
 const thumbs=await Promise.all(manifest.map(async(m,i)=>({input:await sharp(path.join(root,m.png)).resize(640,360).png().toBuffer(),left:(i%3)*656,top:Math.floor(i/3)*376})))
-await sharp({create:{width:1952,height:1112,channels:4,background:'#000'}}).composite(thumbs).png().toFile(path.join(root,'contact-sheet.png'))
+await sharp({create:{width:1952,height:Math.ceil(manifest.length/3)*376-16,channels:4,background:'#000'}}).composite(thumbs).png().toFile(path.join(root,'contact-sheet.png'))
 await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify(manifest,null,2)+'\n')
 await fs.writeFile(path.join(root,'PRESENTER-NOTES.md'),'# Trick or Trace: visual cues\n\nUse the PNGs as full-screen 16:9 sources in your livestream software. Each diagram carries one main explanation; pause on it as long as needed.\n\n'+manifest.map(m=>`## ${m.name}: ${m.title}\n\n${m.notes}\n`).join('\n'))
 const out=bounds.filter(b=>b.file.startsWith('0')&&(b.x<32||b.x+b.width>1888||b.y<16||b.y+b.height>1070))

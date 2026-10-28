@@ -11,5 +11,9 @@ node_modules/
 dist/
 .hyperframes/
 .thumbnails/
+.waveform-cache/
+visuals/countdown/assets/countdown-music.wav
+visuals/countdown/*with-music.mp4
+demo-commands.txt
 examples/basic/.agent/
 examples/basic/checklist.md

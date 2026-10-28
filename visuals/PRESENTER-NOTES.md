@@ -14,6 +14,10 @@ Read the top row left to right, then follow the event into Runtime. Intake Lambd
 
 The model chooses a tool; Strands executes it and feeds back the result. The loop can continue through several tools or finish with an answer. This is a conceptual loop, not a separate deployment architecture. Reasoning does not require displaying private model reasoning.
 
+## 03b-what-is-a-harness: Agent = Model + Harness
+
+Bridge from the agent loop to the configured Strands product. Say: “The model chooses a tool call, but software has to execute it, return the result, and make the next model call. That software is the harness. It also manages the information and state the model needs as work continues. Strands harness assembles those pieces with defaults we can customize.” Agent = Model + Harness is a useful system-design framing, explicitly used by LangChain, rather than a formal universal definition. The six boxes group common harness responsibilities; they are not a claim that every harness ships every feature. Hooks are extension points where developers can implement logging, checks or approvals; their presence alone is not an enforced security boundary or an automatic approval workflow. The next graphic describes this demo’s installed Strands defaults. Research: LangChain, The Anatomy of an Agent Harness (2026-03-10); Anthropic, Effective harnesses for long-running agents (2025-11-26); current Strands harness documentation. See SOURCES.md.
+
 ## 04-harness-defaults: What harness gives you
 
 Use while the basic TypeScript example is visible. Defaults verified against harness 0.3.1 and SDK 1.22.0. Local file tools and shell are not automatically isolated. Sessions default to .agent/sessions; file memory defaults to .agent/memory; .agent/skills is discovered if present. Short demos may not exercise compaction or produce useful memories. Default web search is provider-dependent, so it is not represented as universally enabled.
@@ -30,10 +34,6 @@ The model generates Python tool arguments. Strands sends them over signed Stream
 
 Read the numbered chain carefully: application code uses the Runtime role to assume the investigation role through STS; support/aws.ts signs AWS MCP requests with the temporary credentials. Managed AWS MCP executes the requested AWS operations under the investigation identity. IAM bounds those operations. AWS MCP executes remotely; do not draw it as running in the agent container. Some CloudWatch metrics and Logs Insights result permissions require Resource:* and have a broader read scope than the named sample resources. IAM does not make untrusted logs safe instructions or block every possible data-exfiltration route.
 
-## 08-skills-context-memory: Skills, working context, and long-term memory
+## 08-skills-context-memory: What gives the agent context?
 
-Use the runbook at .agent/skills/checkout-investigation as the concrete skill. A skill is authored procedure, session state records the current incident, and extracted memory carries earlier experience. Context management governs what stays in the model’s current window. Treat prompt-injection text in logs as untrusted evidence; this diagram states the intended workflow, not a guaranteed security property of a prompt.
-
-## 09-observability: Inspect the investigation in observability
-
-Illustrative sequence, not a screenshot or a guarantee of tool ordering. Use actual AgentCore traces to inspect model/tool spans, AWS MCP scripts and nested API results, and Slack HTTP reporting. ACCEPTED only acknowledges dispatch; it does not mean investigation or Slack delivery succeeded. Native ADOT supplies traces. No custom BeforeToolCall logging hook is required. Application code posts Slack after the final agent answer.
+Skills contain reusable instructions and procedures. Session storage persists messages, tool results, and agent state so a session can be restored. Long-term memory retains facts and lessons across sessions. The downward arrows show possible context sources, not a claim that each investigation reads all three. During one invocation, the agent loop retains its working conversation and tool results; it does not need to restore a saved session to use an earlier result. This demo starts a fresh incident session and does not demonstrate a follow-up that restores its snapshot. S3 preserves those snapshots outside the runtime for later inspection or restoration. Local storage could simplify a disposable demo, but files in the current runtime configuration are ephemeral. The shared storage backend can also hold offloaded context; that is distinct from restoring a session snapshot. See SOURCES.md for storage and session documentation.

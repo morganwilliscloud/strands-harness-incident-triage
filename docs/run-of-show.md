@@ -6,25 +6,25 @@
 **Date:** October 28, 2026\
 **Length:** 60 minutes\
 **Main host:** Leads the technical explanation, code walkthrough, and demo.\
-**Co-host:** Rafael Lopez opens the show, introduces segments, watches chat, and moderates Q&A.
+**Co-host:** Co-host Lopez opens the show, introduces segments, watches chat, and moderates Q&A.
 
 **Show premise:** Something is haunting our checkout application. We’ll build an incident-triage agent with Strands harness that responds to a CloudWatch alarm, investigates AWS logs and configuration, and posts its findings to the on-call engineer in Slack.
 
-Each segment lists its estimated duration and the cumulative running time at the end of that segment. Rafael can bring in a relevant audience question during natural pauses. Protect the final Q&A and closing.
+Each segment lists its estimated duration and the cumulative running time at the end of that segment. Co-host can bring in a relevant audience question during natural pauses. Protect the final Q&A and closing.
 
 ## At a glance
 
 | Segment | Duration | Running time at end | Lead |
 |---|---:|---:|---|
-| Welcome and introductions | 4 min | 4 min | Rafael, then main host |
+| Welcome and introductions | 4 min | 4 min | Co-host, then main host |
 | The haunted application and architecture | 6 min | 10 min | Main host |
 | Explain Strands and demonstrate the basic harness | 10 min | 20 min | Main host |
-| Build the incident-triage agent for our application | 10 min | 30 min | Main host, with Rafael’s questions |
+| Build the incident-triage agent for our application | 10 min | 30 min | Main host, with Co-host’s questions |
 | Deploy to AWS using IaC and explain permissions | 5 min | 35 min | Main host |
 | Trigger the alarm and watch the investigation | 10 min | 45 min | Both |
 | Follow up, recover, and retain the lesson | 3 min | 48 min | Both |
-| Audience Q&A | 10 min | 58 min | Rafael moderates |
-| Takeaways and sign-off | 2 min | 60 min | Main host, then Rafael |
+| Audience Q&A | 10 min | 58 min | Co-host moderates |
+| Takeaways and sign-off | 2 min | 60 min | Main host, then Co-host |
 | **Total** | **60 min** | | |
 
 ### Visual cues
@@ -46,7 +46,7 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
 **Duration:** 4 minutes — puts us **4 minutes into the show**.\
 **Screen:** Both hosts on camera; show title.
 
-**Rafael opens:**
+**Co-host opens:**
 
 - Welcome viewers and introduce the Halloween theme.
 - Describe the show: building an agent that investigates a failing AWS application and reports to Slack.
@@ -58,7 +58,7 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
 - Briefly introduce yourself and your work with agents.
 - Preview the sequence: understand the problem, look at the architecture, build the agent, deploy it, and trigger a real failure.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “You said our AWS account might be haunted. What’s going wrong, and what are we going to do about it?”
 
@@ -84,7 +84,7 @@ Use the ready-to-show PNGs in [`visuals/png`](../visuals/png). The [visual kit](
 
 Keep this to the flow and the purpose of each component. The application and monitoring are prepared before the show; briefly establish the healthy baseline here. From the diagram, move into the basic harness demonstration.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “Well can you tell me a little bit more about the agent that you're going to be using to do the incident triage? What is Strands? What is Strands harness? How does this work?”
 
@@ -110,7 +110,7 @@ Keep this to the flow and the purpose of each component. The application and mon
 
 Demonstrate the simple run and its source; explain the defaults without trying to force every context-management or memory behavior to occur during this short example. The tools run locally; the next segment replaces host execution with the incident agent's restricted tools and remote AWS MCP execution.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “How do we build on this for our specific application? I assume we’d have incident-triage runbooks we want it to follow, and we might want to use our own memory provider. How do we plug those in?”
 
@@ -128,7 +128,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 - Show the AWS MCP connection: the model generates investigation scripts, AWS MCP executes them remotely, and the results return to the agent.
 - Briefly explain how to add an integration through `tools`, or explicitly select/disable built-ins when needed.
 
-**Rafael’s question:**
+**Co-host’s question:**
 
 > “It can run commands, but how does it know our team’s investigation process?”
 
@@ -139,7 +139,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 - Show the procedure: gather evidence, test explanations, preserve uncertainty, and return a useful report.
 - Connect this back to the default context management already covered: the investigation can accumulate logs and tool results without us writing a custom context pipeline.
 
-**Rafael’s question:**
+**Co-host’s question:**
 
 > “What if it’s seen this problem before? And can the engineer come back and ask a follow-up?”
 
@@ -151,7 +151,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 - Describe the learning loop: investigate, receive a confirmed outcome, retain the lesson, and retrieve it during a future incident.
 - Emphasize that a recalled fix still needs support from current evidence.
 
-**Optional Rafael follow-up:**
+**Optional Co-host follow-up:**
 
 > “So the runbook is the procedure we teach it, and memory is the experience it builds up?”
 
@@ -163,7 +163,7 @@ Demonstrate the simple run and its source; explain the defaults without trying t
 
 Keep the screen on the actual agent and runbook. Build on the defaults explained in the previous segment rather than explaining them again.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “We’ve given it some powerful tools. How do we deploy it without giving it permission to change anything it wants in the account?”
 
@@ -181,7 +181,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 - Show that the application assumes the investigation role and signs AWS MCP requests with those temporary credentials. Host shell tools are disabled.
 - Confirm the alarm route is connected to the deployed agent.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “All right, the agent is ready. Let’s haunt the checkout and see what it finds.”
 
@@ -200,7 +200,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 - Explain the evidence as it appears. Let the observed tool activity guide the commentary.
 - Open the Slack report and assess it together: cause, evidence, impact, uncertainty, and proposed recovery.
 
-**Rafael:**
+**Co-host:**
 
 - Keep the audience oriented as the screen changes.
 - Bring in one or two relevant chat questions during alarm evaluation or tool execution.
@@ -212,7 +212,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 >
 > “Did it find anything useful from the previous incident?”
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “We have the report. Can the engineer ask a follow-up—and how does the agent learn whether the recommended fix actually worked?”
 
@@ -232,7 +232,7 @@ Keep the screen on the actual agent and runbook. Build on the defaults explained
 
 Use the earlier rehearsal incident for the cross-incident memory demonstration. There is no need to fit a second alarm cycle into the hour.
 
-**Rafael’s bridge:**
+**Co-host’s bridge:**
 
 > “Let’s take some questions from everyone watching.”
 
@@ -241,7 +241,7 @@ Use the earlier rehearsal incident for the cross-incident memory demonstration. 
 **Duration:** 10 minutes — puts us **58 minutes into the show**.\
 **Screen:** Both hosts; return to the diagram or code when useful.
 
-Rafael groups related questions and prioritizes the ones that help viewers adapt the example.
+Co-host groups related questions and prioritizes the ones that help viewers adapt the example.
 
 **Backup questions if chat is quiet:**
 
@@ -261,7 +261,7 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 - Reinforce the three reusable ideas: start with harness defaults, scope AWS permissions, and combine runbooks with experience from previous incidents.
 - Point viewers to the sample and documentation.
 
-**Rafael:**
+**Co-host:**
 
 - Thank the main host and the audience.
 - Remind viewers where to find the resources.
@@ -277,5 +277,5 @@ Rafael groups related questions and prioritizes the ones that help viewers adapt
 - Rehearse a real alarm → investigation → Slack delivery before the broadcast, including the actual Slack token, channel, and on-call mention.
 - Prepare the dependency package and rehearse deployment beforehand. Keep a working deployed copy available if provisioning exceeds the segment, and identify it as the prepared deployment when using it.
 - Complete and verify an earlier incident’s memory extraction before the show. Keep a captured investigation and Slack report available as an explicitly labeled rehearsal fallback.
-- Rafael owns the clock and chat. Use waiting time for relevant questions; trim code detail or the follow-up demonstration if needed. Keep the Slack result, dedicated Q&A, and closing.
+- Co-host owns the clock and chat. Use waiting time for relevant questions; trim code detail or the follow-up demonstration if needed. Keep the Slack result, dedicated Q&A, and closing.
 - After the show, stop traffic and clean up the demo resources.

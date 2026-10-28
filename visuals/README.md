@@ -1,10 +1,10 @@
 # Trick or Trace: livestream graphics
 
-Nine **1920 × 1080 PNGs**, matching editable SVGs, and six transparent overlays. All rendered files are ready to use without installing anything.
+Nine **1920 × 1080 PNGs** in the gallery, matching editable SVGs, and six transparent overlays. All rendered files are ready to use without installing anything.
 
 The [1280 × 720 thumbnail](thumbnail.png) uses the “Trick or Trace” title treatment. Use [the full-size title graphic](png/01-title.png) for the opening screen.
 
-The [countdown video](countdown/trick-or-trace-countdown.mp4) counts from 30 to zero, followed by a brief “We’re live” handoff. It is a silent 33-second, 1080p, 30 fps MP4 with the wizard frog, spiderwebs and Halloween characters. Add it as a media source and restart playback when it becomes visible. The [editable HyperFrames project](countdown/README.md) is included.
+The gallery contains only the visual aids for navigating during the livestream. The countdown is separate; see the [editable HyperFrames project](countdown/README.md) for the current version with music that ends on zero.
 
 ![Visual contact sheet](contact-sheet.png)
 
@@ -13,12 +13,12 @@ The [countdown video](countdown/trick-or-trace-countdown.mp4) counts from 30 to 
 | 01 — Trick or Trace | Opening, holding screen, or closing | [PNG](png/01-title.png) · [SVG](svg/01-title.svg) |
 | 02 — Overall architecture | Explain the path from failed checkout to Slack | [PNG](png/02-architecture.png) · [SVG](svg/02-architecture.svg) |
 | 03 — Strands agent loop | Explain how the model and tools work together | [PNG](png/03-strands-loop.png) · [SVG](svg/03-strands-loop.svg) |
-| 04 — harness defaults | Introduce the basic TypeScript example | [PNG](png/04-harness-defaults.png) · [SVG](svg/04-harness-defaults.svg) |
-| 05 — Runtime and memory | Distinguish the current incident from earlier lessons | [PNG](png/05-runtime-memory.png) · [SVG](svg/05-runtime-memory.svg) |
-| 06 — Runtime and AWS MCP | Show where generated analysis code executes | [PNG](png/06-runtime-interpreter.png) · [SVG](svg/06-runtime-interpreter.svg) |
-| 07 — AWS MCP and IAM | Explain temporary investigation credentials and permissions | [PNG](png/07-mcp-iam.png) · [SVG](svg/07-mcp-iam.svg) |
-| 08 — Skills, context, and memory | Explain how the agent receives the right information | [PNG](png/08-skills-context-memory.png) · [SVG](svg/08-skills-context-memory.svg) |
-| 09 — Observability | Transition into the live trace and report | [PNG](png/09-observability.png) · [SVG](svg/09-observability.svg) |
+| 04 — Agent = Model + Harness | Explain the software around the model before introducing Strands defaults | [PNG](png/03b-what-is-a-harness.png) · [SVG](svg/03b-what-is-a-harness.svg) |
+| 05 — harness defaults | Introduce the basic TypeScript example | [PNG](png/04-harness-defaults.png) · [SVG](svg/04-harness-defaults.svg) |
+| 06 — Runtime and memory | Distinguish the current incident from earlier lessons | [PNG](png/05-runtime-memory.png) · [SVG](svg/05-runtime-memory.svg) |
+| 07 — Runtime and AWS MCP | Show where generated analysis code executes | [PNG](png/06-runtime-interpreter.png) · [SVG](svg/06-runtime-interpreter.svg) |
+| 08 — AWS MCP and IAM | Explain temporary investigation credentials and permissions | [PNG](png/07-mcp-iam.png) · [SVG](svg/07-mcp-iam.svg) |
+| 09 — What gives the agent context? | Show one agent accessing skills, session history, and long-term memory | [PNG](png/08-skills-context-memory.png) · [SVG](svg/08-skills-context-memory.svg) |
 
 ## Use on the stream
 

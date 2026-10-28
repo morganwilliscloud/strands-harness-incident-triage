@@ -1,3 +1,7 @@
+# Current export
+
+The repository countdown is silent, ends on the first zero frame, and has no live handoff card. It contains 901 frames at 30 fps (30.033333 seconds). The entries below describe the earlier 33-second version.
+
 # Countdown review
 
 The timer is the hero, with the original Strands wordmark and wizard frog, edge spiderwebs, a pink spider, a white ghost and a pumpkin. The scene stays fixed so viewers always know where to find the remaining time. It counts 30 to 0 at exact second boundaries, then holds a live handoff. No footage, narration, footer or scene cuts.

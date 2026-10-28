@@ -6,7 +6,7 @@ From the repository root, after `npm ci` and configuring AWS credentials with Be
 AWS_REGION=us-east-1 npm run basic
 ```
 
-Optionally set `AWS_PROFILE` to use a named profile. No `.env` file is needed.
+Optionally set `AWS_PROFILE` to use a named profile and `MODEL_ID` to select a tool-capable Bedrock model (including the `bedrock/` prefix), as shown in the root README. Without `MODEL_ID`, this introductory example uses its default model. No `.env` file is needed.
 
 The npm command starts in this folder, so the checklist and local harness files are separate from the incident agent's runbook. This is a working directory, not a sandbox: the default shell and file tools run locally.
 
@@ -31,4 +31,4 @@ Each run starts a new conversation by default. The second command reads the exis
 - **Skills:** harness discovers `.agent/skills` when present. This example has no custom skill.
 - **Cleanup:** `await using` shuts down harness at scope exit, including flushing pending persistence work.
 
-Then open the repository's main `agent.ts`: the same `createHarness` call now has incident instructions, a restricted tool selection, AWS MCP, Code Interpreter, S3 sessions, and AgentCore Memory.
+Then open the repository's main `agent.ts`: the same `createHarness` call now has incident instructions, a restricted tool selection, remote AWS MCP, S3 sessions, and AgentCore Memory.
